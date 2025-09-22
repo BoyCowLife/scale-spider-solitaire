@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scale Spider Solitaire</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#1a2332">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Scale Spider">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiU2NhbGUgU3BpZGVyIFNvbGl0YWlyZSIsInNob3J0X25hbWUiOiJTY2FsZVNwaWRlciIsInN0YXJ0X3VybCI6Ii8iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjMWEyMzMyIiwidGhlbWVfY29sb3IiOiIjZjY3NDhhIiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEhOMlp5QjRiV3h1Y3owaWFIUjBjRG92TDNkM2R5NTNNeTV2Y21jdk1qQXdNQzl6ZG1jaUlIWnBaWGREYjNnOUlqQWdNQ0F4TURBZ01UQXdJaUIzYVdSMGFEMGlNVEF3SWlCb1pXbG5hSFE5SWpFd01DSWlJR1pwYkd3OUlpTm1Aamc0T0RvaVBqeHdZWFJvSUdROUlrMHhNQ0F5TUV3eU1DQTBNRXd6TUNBME1FdzBNQ0F6TUV3MU1DQXlNRXcyTUNBek1FdzNNQ0F5TUV3NE1DQXpNRXc1TUNBeU1Fd3hNREFnTTBWTlRVNUVOVGhOU3lJZ1ptbHNiRDBpSXpZM05EZzRZU0l2UGp3dmMzWm5QZ0k9PSIsInNpemVzIjoiMTkyeDE5MiIsInR5cGUiOiJpbWFnZS9zdmcreG1sIn1dfQ==">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        /* Menu Screen */
+        .menu-screen {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .menu-screen.active {
+            display: block;
+        }
+
+        .menu-title {
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .menu-subtitle {
+            font-size: 1.2rem;
+            color: #94a3b8;
+            margin-bottom: 40px;
+        }
+
+        .level-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .level-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            border-radius: 16px;
+            padding: 20px;
+            color: #e2e8f0;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .level-btn:hover, .level-btn:active {
+            transform: translateY(-2px);
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.2);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.2);
+        }
+
+        .level-info {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-top: 8px;
+        }
+
+        /* Game Screen */
+        .game-screen {
+            display: none;
+        }
+
+        .game-screen.active {
+            display: block;
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .game-title {
+            font-size: 1.5rem;
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            font-size: 1.1rem;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .success { color: #4ade80; }
+        .error { color: #3b82f6; }
+
+        .menu-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            padding: 10px 20px;
+            color: #e2e8f0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .menu-btn:hover {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: #3b82f6;
+        }
+
+        /* Instructions */
+        .instructions {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #10b981;
+        }
+
+        .instructions-icon {
+            margin-right: 6px;
+        }
+        .game-board {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .scale-piles {
+            display: grid;
+            gap: 8px;
+            margin-bottom: 15px;
+            /* Grid columns set dynamically by JavaScript */
+        }
+
+        .scale-pile {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px dashed rgba(59, 130, 246, 0.4);
+            border-radius: 8px;
+            padding: 8px;
+            min-height: 70px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .scale-pile.highlight {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .scale-pile.reject {
+            border-color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.1);
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .scale-label {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #3b82f6;
+            margin-bottom: 4px;
+        }
+
+        .pile-count {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        .cards-collected {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            justify-content: center;
+            margin-top: 4px;
+        }
+
+        .collected-card {
+            width: 32px;
+            height: 16px;
+            background: #10b981;
+            border-radius: 4px;
+            font-size: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: bold;
+            text-align: center;
+            line-height: 1;
+        }
+
+        .cards-collected {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            justify-content: center;
+            margin-top: 8px;
+        }
+
+        .collected-card {
+            width: 24px;
+            height: 14px;
+            background: #4ade80;
+            border-radius: 3px;
+            font-size: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-weight: bold;
+        }
+
+        /* Cards Area */
+        .cards-area {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: 1fr 200px;
+        }
+
+        .play-area {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            min-height: 200px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-content: flex-start;
+        }
+
+        .deck-area {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .deck {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .deck:hover {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: #3b82f6;
+        }
+
+        .deck-count {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #3b82f6;
+        }
+
+        /* Cards */
+        .card {
+            width: 80px;
+            height: 100px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            position: relative;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card.face-down {
+            background: linear-gradient(135deg, #047857 0%, #059669 50%, #10b981 100%);
+            color: #fff;
+            cursor: pointer;
+            border: 2px solid #10b981;
+        }
+
+        .card.face-down:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(16, 185, 129, 0.4);
+            border-color: #34d399;
+        }
+
+        .card.face-up {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border: 2px solid #e2e8f0;
+            color: #1e293b;
+            cursor: grab;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .card.face-up:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .card.face-up:active {
+            cursor: grabbing;
+            transform: scale(1.05);
+        }
+
+        .card.face-up.dragging {
+            transform: rotate(5deg) scale(1.1);
+            z-index: 1000;
+            opacity: 0.9;
+        }
+
+        .card-back {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .card-back::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            border: 2px solid rgba(16, 185, 129, 0.5);
+            border-radius: 6px;
+            background: linear-gradient(
+                135deg,
+                rgba(16, 185, 129, 0.2) 0%,
+                rgba(52, 211, 153, 0.15) 50%,
+                rgba(16, 185, 129, 0.1) 100%
+            );
+        }
+
+        .card-back-icon {
+            font-size: 2.2rem;
+            margin-bottom: 6px;
+            z-index: 1;
+            position: relative;
+            color: #5b21b6;
+            text-shadow: 0 2px 4px rgba(91, 33, 182, 0.4);
+        }
+
+        .card-back-text {
+            font-size: 0.7rem;
+            text-align: center;
+            z-index: 1;
+            position: relative;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .card-scale-text {
+            font-size: 0.6rem;
+            color: #64748b;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+            position: relative;
+            z-index: 10;
+        }
+
+        .card-scale {
+            font-size: 1.4rem;
+            color: #3b82f6;
+            text-align: center;
+            font-weight: 800;
+            margin-bottom: 1px;
+            font-family: 'Inter', system-ui, sans-serif;
+            position: relative;
+            z-index: 10;
+        }
+
+        .card-scale-major {
+            font-size: 0.65rem;
+            color: #64748b;
+            text-align: center;
+            margin-bottom: 6px;
+            text-transform: lowercase;
+            font-weight: 500;
+            font-style: italic;
+            position: relative;
+            z-index: 10;
+        }
+
+        .card-degree {
+            font-size: 1.6rem;
+            color: #1e293b;
+            margin-top: 2px;
+            font-weight: 900;
+            font-family: 'Inter', system-ui, sans-serif;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Card corners decoration */
+        .card.face-up::before {
+            content: '';
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            width: 8px;
+            height: 8px;
+            border-left: 1px solid #3b82f6;
+            border-top: 1px solid #3b82f6;
+            border-radius: 2px 0 0 0;
+            z-index: 0;
+        }
+
+        .card.face-up::after {
+            content: '';
+            position: absolute;
+            bottom: 6px;
+            right: 6px;
+            width: 8px;
+            height: 8px;
+            border-right: 1px solid #3b82f6;
+            border-bottom: 1px solid #3b82f6;
+            border-radius: 0 0 2px 0;
+            z-index: 0;
+        }
+
+        /* Victory Screen */
+        .victory-screen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .victory-screen.active {
+            display: flex;
+        }
+
+        .victory-content {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            text-align: center;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 400px;
+            margin: 20px;
+        }
+
+        .victory-title {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+
+        .victory-stats {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .victory-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .victory-btn {
+            background: rgba(59, 130, 246, 0.2);
+            border: 2px solid #3b82f6;
+            border-radius: 12px;
+            padding: 12px 24px;
+            color: #e2e8f0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .victory-btn:hover {
+            background: rgba(59, 130, 246, 0.4);
+            transform: translateY(-2px);
+        }
+
+        /* Footer */
+        .game-footer {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 12px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #10b981;
+        }
+
+        .footer-icon {
+            margin-right: 8px;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .menu-title {
+                font-size: 2rem;
+            }
+
+            .scale-piles {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 6px;
+            }
+
+            .scale-pile {
+                min-height: 60px;
+                padding: 6px;
+            }
+
+            .scale-label {
+                font-size: 0.9rem;
+            }
+
+            .pile-count {
+                font-size: 0.7rem;
+            }
+
+            .pile-count {
+                font-size: 0.7rem;
+            }
+
+            .cards-area {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .deck-area {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .card {
+                width: 70px;
+                height: 90px;
+                font-size: 0.8rem;
+            }
+
+            .card-scale {
+                font-size: 1.2rem;
+            }
+
+            .card-scale-text {
+                font-size: 0.55rem;
+            }
+
+            .card-scale-major {
+                font-size: 0.6rem;
+            }
+
+            .card-degree {
+                font-size: 1.4rem;
+            }
+
+            .card-back-icon {
+                font-size: 1.8rem;
+                color: #5b21b6;
+            }
+
+            .card-back-text {
+                font-size: 0.6rem;
+            }
+
+            .game-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+
+            .stats {
+                justify-content: center;
+            }
+
+            .play-area {
+                padding: 15px;
+                min-height: 150px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 8px;
+            }
+
+            .scale-piles {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 4px;
+            }
+
+            .scale-pile {
+                min-height: 50px;
+                padding: 4px;
+            }
+
+            .scale-label {
+                font-size: 0.8rem;
+                margin-bottom: 2px;
+            }
+
+            .pile-count {
+                font-size: 0.6rem;
+            }
+
+            .collected-card {
+                width: 28px;
+                height: 14px;
+                font-size: 7px;
+            }
+
+            .pile-count {
+                font-size: 0.6rem;
+            }
+
+            .card {
+                width: 60px;
+                height: 80px;
+                font-size: 0.7rem;
+            }
+
+            .card-scale {
+                font-size: 1rem;
+            }
+
+            .card-scale-text {
+                font-size: 0.5rem;
+            }
+
+            .card-scale-major {
+                font-size: 0.55rem;
+            }
+
+            .card-degree {
+                font-size: 1.2rem;
+            }
+
+            .card-back-icon {
+                font-size: 1.5rem;
+                color: #5b21b6;
+            }
+
+            .card-back-text {
+                font-size: 0.55rem;
+            }
+
+            .victory-content {
+                padding: 30px 20px;
+            }
+
+            .victory-buttons {
+                flex-direction: column;
+            }
+
+            .collected-card {
+                width: 20px;
+                height: 12px;
+                font-size: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Menu Screen -->
+        <div class="menu-screen active" id="menuScreen">
+            <h1 class="menu-title">🕷️ Scale Spider</h1>
+            <p class="menu-subtitle">Solitario delle Scale Maggiori</p>
+            
+            <div class="level-buttons">
+                <button class="level-btn" onclick="startGame('easy')">
+                    <div>🟢 Livello Facile</div>
+                    <div class="level-info">4 scale maggiori</div>
+                </button>
+                
+                <button class="level-btn" onclick="startGame('medium')">
+                    <div>🟡 Livello Medio</div>
+                    <div class="level-info">6 scale maggiori</div>
+                </button>
+                
+                <button class="level-btn" onclick="startGame('hard')">
+                    <div>🔴 Livello Difficile</div>
+                    <div class="level-info">8 scale maggiori</div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div class="game-screen" id="gameScreen">
+            <div class="game-header">
+                <h2 class="game-title">🕷️ Scale Spider</h2>
+                <div class="stats">
+                    <div class="stat success">
+                        ✅ <span id="successCount">0</span>
+                    </div>
+                    <div class="stat error">
+                        ❌ <span id="errorCount">0</span>
+                    </div>
+                </div>
+                <button class="menu-btn" onclick="goToMenu()">📋 Menu</button>
+            </div>
+
+            <div class="game-board">
+                <div class="instructions">
+                    <span class="instructions-icon">🎯</span>
+                    Trascina le carte sulle note corrispondenti
+                </div>
+                <div class="scale-piles" id="scalePiles">
+                    <!-- Scale piles will be generated here -->
+                </div>
+            </div>
+
+            <div class="cards-area">
+                <div class="play-area" id="playArea">
+                    <!-- Cards in play will appear here -->
+                </div>
+                
+                <div class="deck-area">
+                    <div class="deck" id="deck" onclick="drawCards()">
+                        <div class="deck-count" id="deckCount">52</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="game-footer" id="gameFooter">
+                <span class="footer-icon">🎴</span>
+                <span id="footerText">Pesca carte dal mazzo per continuare</span>
+            </div>
+        </div>
+
+        <!-- Victory Screen -->
+        <div class="victory-screen" id="victoryScreen">
+            <div class="victory-content">
+                <div class="victory-title">🎉 Complimenti!</div>
+                <div class="victory-stats" id="victoryStats">
+                    Hai completato tutte le scale!<br>
+                    ✅ Successi: <span id="finalSuccess">0</span><br>
+                    ❌ Errori: <span id="finalErrors">0</span><br>
+                    📊 Precisione: <span id="accuracy">0</span>%
+                </div>
+                <div class="victory-buttons">
+                    <button class="victory-btn" onclick="playAgain()">🔄 Gioca Ancora</button>
+                    <button class="victory-btn" onclick="goToMenu()">📋 Menu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        let gameState = {
+            level: 'easy',
+            scales: [],
+            cards: [],
+            playCards: [],
+            successCount: 0,
+            errorCount: 0,
+            completedPiles: 0,
+            noteCompleted: {}
+        };
+
+        // Major scales with their notes (tutte con notazione bemole)
+        const majorScales = {
+            'C': ['C', 'D', 'E', 'F', 'G', 'A', 'B'],
+            'G': ['G', 'A', 'B', 'C', 'D', 'E', 'Gb'],
+            'D': ['D', 'E', 'Gb', 'G', 'A', 'B', 'Db'],
+            'A': ['A', 'B', 'Db', 'D', 'E', 'Gb', 'Ab'],
+            'E': ['E', 'Gb', 'Ab', 'A', 'B', 'Db', 'Eb'],
+            'B': ['B', 'Db', 'Eb', 'E', 'Gb', 'Ab', 'Bb'],
+            'Gb': ['Gb', 'Ab', 'Bb', 'B', 'Db', 'Eb', 'F'],
+            'F': ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
+            'Bb': ['Bb', 'C', 'D', 'Eb', 'F', 'G', 'A'],
+            'Eb': ['Eb', 'F', 'G', 'Ab', 'Bb', 'C', 'D'],
+            'Ab': ['Ab', 'Bb', 'C', 'Db', 'Eb', 'F', 'G'],
+            'Db': ['Db', 'Eb', 'F', 'Gb', 'Ab', 'Bb', 'C']
+        };
+
+        const scaleNames = ['C', 'G', 'D', 'A', 'E', 'B', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb'];
+
+        // Roman numerals for scale degrees
+        function getRomanNumeral(degree) {
+            const romans = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+            return romans[degree] || degree;
+        }
+        const chromaticNotes = ['C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B'];
+
+        // Start game with specified level
+        function startGame(level) {
+            gameState.level = level;
+            gameState.successCount = 0;
+            gameState.errorCount = 0;
+            gameState.completedPiles = 0;
+            gameState.noteCompleted = {};
+            gameState.notesNeeded = [];
+            
+            // Determine number of scales based on level
+            let numScales;
+            switch(level) {
+                case 'easy': numScales = 4; break;
+                case 'medium': numScales = 6; break;
+                case 'hard': numScales = 8; break;
+            }
+            
+            // Select random scales
+            gameState.scales = selectRandomScales(numScales);
+            
+            // Generate cards for these scales
+            gameState.cards = generateCards(gameState.scales);
+            gameState.playCards = [];
+            
+            // Setup UI (this will create piles only for needed notes)
+            setupNotePiles();
+            updateStats();
+            updateDeckCount();
+            
+            // Switch to game screen
+            document.getElementById('menuScreen').classList.remove('active');
+            document.getElementById('gameScreen').classList.add('active');
+            
+            // Draw initial cards
+            drawCards();
+        }
+
+        // Select random scales for the level - FIXED to avoid mixing sharp/flat scales
+        function selectRandomScales(count) {
+            // Separate scales by type to avoid conflicts
+            const sharpScales = ['C', 'G', 'D', 'A', 'E', 'B'];
+            const flatScales = ['C', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb'];
+            
+            // Choose either sharp-based or flat-based scales (not mixed)
+            const useSharpScales = Math.random() > 0.5;
+            const availableScales = useSharpScales ? sharpScales : flatScales;
+            
+            // Shuffle and select
+            const shuffled = [...availableScales].sort(() => Math.random() - 0.5);
+            const selected = shuffled.slice(0, Math.min(count, availableScales.length));
+            
+            console.log(`Selected ${useSharpScales ? 'SHARP' : 'FLAT'} scales:`, selected);
+            
+            return selected;
+        }
+
+        // Generate cards for the selected scales
+        function generateCards(scales) {
+            const cards = [];
+            
+            // IMPORTANT: Only generate cards for the scales that were actually selected
+            scales.forEach(scale => {
+                const scaleNotes = majorScales[scale];
+                if (!scaleNotes) {
+                    console.error(`Scale ${scale} not found in majorScales!`);
+                    return;
+                }
+                
+                for (let degree = 1; degree <= 7; degree++) {
+                    const correctNote = scaleNotes[degree - 1];
+                    
+                    cards.push({
+                        scale: scale,
+                        degree: degree,
+                        correctNote: correctNote,
+                        id: `${scale}_${degree}_${Math.random()}`,
+                        faceUp: false,
+                        flipping: false
+                    });
+                }
+            });
+            
+            console.log("Generated cards for scales:", scales);
+            console.log("Sample cards:", cards.slice(0, 5));
+            
+            // Add more cards of the same types for longer gameplay
+            const duplicatedCards = [...cards, ...cards];
+            
+            // Shuffle cards
+            return duplicatedCards.sort(() => Math.random() - 0.5);
+        }
+
+        // Setup note piles in UI - ONLY for notes that appear in selected scales
+        function setupNotePiles() {
+            const container = document.getElementById('scalePiles');
+            container.innerHTML = '';
+            
+            // Get all unique notes from selected scales
+            const uniqueNotes = new Set();
+            console.log("Setting up piles for scales:", gameState.scales);
+            
+            gameState.scales.forEach(scale => {
+                const scaleNotes = majorScales[scale];
+                console.log(`Scale ${scale} notes:`, scaleNotes);
+                scaleNotes.forEach(note => {
+                    uniqueNotes.add(note);
+                    console.log(`Adding note: ${note}`);
+                });
+            });
+            
+            // Convert to sorted array
+            const notesNeeded = Array.from(uniqueNotes).sort((a, b) => {
+                const chromatic = ['C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B'];
+                return chromatic.indexOf(a) - chromatic.indexOf(b);
+            });
+            
+            console.log("FINAL NOTES FOR PILES:", notesNeeded);
+            
+            // Store for game logic
+            gameState.notesNeeded = notesNeeded;
+            
+            // Create piles only for needed notes
+            notesNeeded.forEach((note, index) => {
+                const pile = document.createElement('div');
+                pile.className = 'scale-pile';
+                pile.id = `pile-${note}`;
+                pile.setAttribute('data-note', note);
+                
+                pile.innerHTML = `
+                    <div class="scale-label">${note}</div>
+                    <div class="pile-count">0</div>
+                    <div class="cards-collected" id="collected-${note}"></div>
+                `;
+                
+                // Add drag and drop events
+                pile.addEventListener('dragover', handleDragOver);
+                pile.addEventListener('drop', handleDrop);
+                
+                container.appendChild(pile);
+            });
+            
+            // Adjust grid based on number of piles
+            const numPiles = notesNeeded.length;
+            let columns = 3;
+            if (numPiles <= 8) columns = 4;
+            if (numPiles <= 6) columns = 3;
+            if (numPiles <= 4) columns = 2;
+            
+            container.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+        }
+
+        // Draw cards from deck
+        function drawCards() {
+            const maxCardsInPlay = 7;
+            const cardsToDraw = Math.min(5, gameState.cards.length);
+            
+            if (gameState.cards.length === 0) return;
+            
+            // Remove excess cards if needed
+            while (gameState.playCards.length > maxCardsInPlay - cardsToDraw) {
+                gameState.playCards.shift();
+            }
+            
+            // Draw new cards
+            for (let i = 0; i < cardsToDraw && gameState.cards.length > 0; i++) {
+                const card = gameState.cards.pop();
+                gameState.playCards.push(card);
+            }
+            
+            updatePlayArea();
+            updateDeckCount();
+        }
+
+        // Update play area with cards
+        function updatePlayArea() {
+            const container = document.getElementById('playArea');
+            container.innerHTML = '';
+            
+            gameState.playCards.forEach(card => {
+                const cardElement = createCardElement(card);
+                container.appendChild(cardElement);
+            });
+        }
+
+        // Create card element
+        function createCardElement(card) {
+            const cardEl = document.createElement('div');
+            cardEl.className = card.faceUp ? 'card face-up' : 'card face-down';
+            cardEl.setAttribute('data-card-id', card.id);
+            
+            if (card.faceUp) {
+                cardEl.draggable = true;
+                cardEl.innerHTML = `
+                    <div class="card-scale-text">Scala di</div>
+                    <div class="card-scale">${card.scale}</div>
+                    <div class="card-scale-major">maggiore</div>
+                    <div class="card-degree">${card.degree}°</div>
+                `;
+                
+                cardEl.addEventListener('dragstart', handleDragStart);
+                cardEl.addEventListener('dragend', handleDragEnd);
+            } else {
+                cardEl.innerHTML = `
+                    <div class="card-back">
+                        <div class="card-back-icon">♠</div>
+                        <div class="card-back-text">tap</div>
+                    </div>
+                `;
+                
+                // Prevent event propagation and multiple clicks
+                cardEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    flipCard(card.id);
+                }, { once: true });
+            }
+            
+            return cardEl;
+        }
+
+        // Flip card from face-down to face-up
+        function flipCard(cardId) {
+            const card = gameState.playCards.find(c => c.id === cardId);
+            if (!card || card.faceUp) return;
+            
+            // Prevent multiple rapid clicks
+            if (card.flipping) return;
+            card.flipping = true;
+            
+            setTimeout(() => {
+                card.faceUp = true;
+                card.flipping = false;
+                updatePlayArea();
+            }, 150);
+        }
+
+        // Drag and drop handlers
+        function handleDragStart(e) {
+            e.target.classList.add('dragging');
+            e.dataTransfer.setData('text/plain', e.target.getAttribute('data-card-id'));
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            
+            const cardId = e.dataTransfer.getData('text/plain');
+            const targetNote = e.currentTarget.getAttribute('data-note');
+            
+            const card = gameState.playCards.find(c => c.id === cardId);
+            if (!card) return;
+            
+            // Check if correct: EXACT match only (no enharmonic equivalents)
+            if (card.correctNote === targetNote) {
+                // Correct!
+                handleCorrectDrop(card, targetNote);
+            } else {
+                // Wrong!
+                handleIncorrectDrop(e.currentTarget);
+            }
+        }
+
+        // Handle correct card drop
+        function handleCorrectDrop(card, note) {
+            gameState.successCount++;
+            
+            // Remove card from play (carta sparisce!)
+            gameState.playCards = gameState.playCards.filter(c => c.id !== card.id);
+            
+            // Add to collected pile for tracking
+            addToCollected(note, card);
+            
+            // Update UI
+            updatePlayArea();
+            updateStats();
+            updateDeckCount(); // Update footer message
+            
+            // Show success animation on pile
+            const pile = document.getElementById(`pile-${note}`);
+            pile.classList.add('highlight');
+            setTimeout(() => pile.classList.remove('highlight'), 500);
+            
+            // Check if game is won
+            checkGameCompletion();
+        }
+
+        // Add card to collected pile
+        function addToCollected(note, card) {
+            const container = document.getElementById(`collected-${note}`);
+            const cardEl = document.createElement('div');
+            cardEl.className = 'collected-card';
+            
+            // Use Roman numerals: "V di C" instead of "C5"
+            const romanDegree = getRomanNumeral(card.degree);
+            cardEl.textContent = `${romanDegree} di ${card.scale}`;
+            cardEl.title = `${card.scale} maggiore - ${card.degree}° grado (${romanDegree})`;
+            
+            container.appendChild(cardEl);
+            
+            // Update count
+            const count = container.children.length;
+            const countEl = document.querySelector(`#pile-${note} .pile-count`);
+            countEl.textContent = count;
+        }
+
+        // Handle incorrect card drop
+        function handleIncorrectDrop(pile) {
+            gameState.errorCount++;
+            
+            // Show error animation
+            pile.classList.add('reject');
+            setTimeout(() => pile.classList.remove('reject'), 500);
+            
+            updateStats();
+            updateDeckCount(); // Update footer message
+        }
+
+        // Check if game is complete
+        function checkGameCompletion() {
+            // Game is won when deck is empty and no cards in play
+            if (gameState.cards.length === 0 && gameState.playCards.length === 0) {
+                showVictory();
+            }
+        }
+
+        // Show victory screen
+        function showVictory() {
+            const total = gameState.successCount + gameState.errorCount;
+            const accuracy = total > 0 ? Math.round((gameState.successCount / total) * 100) : 0;
+            
+            document.getElementById('finalSuccess').textContent = gameState.successCount;
+            document.getElementById('finalErrors').textContent = gameState.errorCount;
+            document.getElementById('accuracy').textContent = accuracy;
+            
+            document.getElementById('victoryScreen').classList.add('active');
+        }
+
+        // Update statistics display
+        function updateStats() {
+            document.getElementById('successCount').textContent = gameState.successCount;
+            document.getElementById('errorCount').textContent = gameState.errorCount;
+        }
+
+        // Update deck count and footer
+        function updateDeckCount() {
+            const deckCountEl = document.getElementById('deckCount');
+            const footerTextEl = document.getElementById('footerText');
+            
+            deckCountEl.textContent = gameState.cards.length;
+            
+            // Update footer message based on game state
+            if (gameState.cards.length === 0 && gameState.playCards.length === 0) {
+                footerTextEl.textContent = "🎉 Complimenti! Hai completato tutte le carte!";
+            } else if (gameState.cards.length === 0) {
+                footerTextEl.textContent = "📝 Completa le carte rimanenti per vincere";
+            } else if (gameState.playCards.length === 0) {
+                footerTextEl.textContent = "🎴 Pesca carte dal mazzo per continuare";
+            } else {
+                footerTextEl.textContent = `🎯 Trascina le carte sui box - Carte rimaste: ${gameState.cards.length}`;
+            }
+        }
+
+        // Navigation functions
+        function goToMenu() {
+            document.getElementById('gameScreen').classList.remove('active');
+            document.getElementById('victoryScreen').classList.remove('active');
+            document.getElementById('menuScreen').classList.add('active');
+        }
+
+        function playAgain() {
+            document.getElementById('victoryScreen').classList.remove('active');
+            startGame(gameState.level);
+        }
+
+        // Service Worker Registration for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('data:text/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCJpbnN0YWxsIiwgZSA9PiB7CiAgZS53YWl0VW50aWwoCiAgICBjYWNoZXMub3Blbigic2NhbGUtc3BpZGVyLXYxIikudGhlbihyYWNoZSA9PiB7CiAgICAgIGlldHVybiBjYWNoZS5hZGRBbGwoWyIvIl0pOwogICAgfSkKICApOwp9KTsKCnNlbGYuYWRkRXZlbnRMaXN0ZW5lcigiZmV0Y2giLCBlID0+IHsKICBlLnJlc3BvbmRXaXRoKAogICAgY2FjaGVzLm1hdGNoKGUucmVxdWVzdCkudGhlbihyZXNwb25zZSA9PiB7CiAgICAgIHJldHVybiByZXNwb25zZSB8fCBmZXRjaChlLnJlcXVlc3QpOwogICAgfSkKICApOwp9KTs=')
+                .then(() => console.log('Service Worker registered'))
+                .catch(err => console.log('Service Worker registration failed'));
+            });
+        }
+    </script>
+</body>
+</html>
