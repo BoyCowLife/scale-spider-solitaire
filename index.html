@@ -347,12 +347,21 @@
             border-color: #34d399;
         }
 
+        /* Touch Support for Mobile */
         .card.face-up {
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
             border: 2px solid #e2e8f0;
             color: #1e293b;
             cursor: grab;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            touch-action: none; /* Prevent default touch behaviors */
+        }
+
+        .card.face-up.dragging-touch {
+            transform: scale(1.1);
+            z-index: 1000;
+            opacity: 0.8;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
         }
 
         .card.face-up:hover {
@@ -1059,8 +1068,15 @@
                     <div class="card-degree">${card.degree}°</div>
                 `;
                 
+                // Desktop drag & drop
                 cardEl.addEventListener('dragstart', handleDragStart);
                 cardEl.addEventListener('dragend', handleDragEnd);
+                
+                // Mobile touch events
+                cardEl.addEventListener('touchstart', handleTouchStart, { passive: false });
+                cardEl.addEventListener('touchmove', handleTouchMove, { passive: false });
+                cardEl.addEventListener('touchend', handleTouchEnd, { passive: false });
+                
             } else {
                 cardEl.innerHTML = `
                     <div class="card-back">
@@ -1108,6 +1124,73 @@
 
         function handleDragOver(e) {
             e.preventDefault();
+        }
+
+        // Touch handlers for mobile devices
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const card = e.target.closest('.card');
+            
+            if (!card || !card.classList.contains('face-up')) return;
+            
+            touchDragState.isDragging = true;
+            touchDragState.draggedCard = card;
+            touchDragState.startX = touch.clientX;
+            touchDragState.startY = touch.clientY;
+            
+            card.classList.add('dragging-touch');
+        }
+
+        function handleTouchMove(e) {
+            if (!touchDragState.isDragging) return;
+            
+            e.preventDefault();
+            const touch = e.touches[0];
+            touchDragState.currentX = touch.clientX;
+            touchDragState.currentY = touch.clientY;
+            
+            // Visual feedback - move card with finger
+            const card = touchDragState.draggedCard;
+            const deltaX = touchDragState.currentX - touchDragState.startX;
+            const deltaY = touchDragState.currentY - touchDragState.startY;
+            
+            card.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1.1)`;
+        }
+
+        function handleTouchEnd(e) {
+            if (!touchDragState.isDragging) return;
+            
+            e.preventDefault();
+            const card = touchDragState.draggedCard;
+            
+            // Reset card position
+            card.style.transform = '';
+            card.classList.remove('dragging-touch');
+            
+            // Find what pile we're over
+            const touch = e.changedTouches[0];
+            const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+            const pile = elementBelow ? elementBelow.closest('.scale-pile') : null;
+            
+            if (pile) {
+                // Simulate drop event
+                const cardId = card.getAttribute('data-card-id');
+                const targetNote = pile.getAttribute('data-note');
+                
+                const cardData = gameState.playCards.find(c => c.id === cardId);
+                if (cardData) {
+                    if (cardData.correctNote === targetNote) {
+                        handleCorrectDrop(cardData, targetNote);
+                    } else {
+                        handleIncorrectDrop(pile);
+                    }
+                }
+            }
+            
+            // Reset touch state
+            touchDragState.isDragging = false;
+            touchDragState.draggedCard = null;
         }
 
         function handleDrop(e) {
