@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0" />
-  <title>Scale Spider v0.8</title>
+  <title>Scale Spider v0.9</title>
 
   <meta name="theme-color" content="#0f172a" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -41,7 +41,7 @@
 
     /* Note boxes */
     .note-boxes{display:grid;gap:8px;grid-template-columns:repeat(3,1fr);margin-bottom:16px}
-    .note-box{background:rgba(255,255,255,.03);border:2px dashed rgba(59,130,246,.25);border-radius:12px;padding:14px 8px;text-align:center;transition:all .2s ease;cursor:pointer;position:relative}
+    .note-box{background:rgba(255,255,255,.03);border:2px dashed rgba(59,130,246,.25);border-radius:12px;padding:14px 8px;text-align:center;transition:all .2s ease;cursor:pointer;position:relative; touch-action: manipulation; }
     .note-box.answer-active{border-color:rgba(59,130,246,.55);background:rgba(59,130,246,.15);box-shadow:0 0 10px rgba(59,130,246,.25)}
     .note-box.can-drop{border-color:#10b981;background:rgba(16,185,129,.15);box-shadow:0 0 15px rgba(16,185,129,.3)}
     .note-name{font-size:1.15rem;font-weight:800;color:#3b82f6}
@@ -56,7 +56,7 @@
     .play-area::-webkit-scrollbar{height:8px}
     .play-area::-webkit-scrollbar-thumb{background:rgba(59,130,246,.3);border-radius:4px}
 
-    /* HIDE any legacy right-side advance box if it still exists */
+    /* Nascondi eventuale vecchio box "advance" */
     .advance-box{display:none !important}
 
     /* Cards */
@@ -143,7 +143,7 @@
     <!-- Gioco -->
     <div class="game-screen" id="game">
       <div class="header">
-        <div class="game-title">🕷️ Scale Spider <span class="ver-chip">v0.8</span></div>
+        <div class="game-title">🕷️ Scale Spider <span class="ver-chip">v0.9</span></div>
         <div class="stats">
           <div class="stat">✅ <span class="stat-value" id="success">0</span></div>
           <div class="stat">❌ <span class="stat-value" id="errors">0</span></div>
@@ -193,6 +193,20 @@
   </div>
 
   <script>
+    /* ---------- Tap helper: iOS usa touchstart (niente ghost click) ---------- */
+    function addTap(el, handler){
+      let fromTouch = false;
+      el.addEventListener('touchstart', (e)=>{
+        fromTouch = true;
+        handler(e);
+        e.preventDefault(); // cancella il click fantasma ~300ms dopo
+      }, {passive:false});
+      el.addEventListener('click', (e)=>{
+        if(fromTouch){ fromTouch = false; return; }
+        handler(e);
+      });
+    }
+
     // ======== Dati musicali =========
     const BOX_NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
     const NOTE_TO_INDEX = {
@@ -230,19 +244,15 @@
       renderNoteBoxes();
 
       const adv = document.getElementById('advanceFab');
-      adv.addEventListener('click', dealNextHand, {passive:true});
+      addTap(adv, dealNextHand);
       adv.addEventListener('keydown', (e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); dealNextHand(); }});
     });
 
     function initMenu(){
       document.querySelectorAll('.level-btn').forEach(btn=>{
-        btn.addEventListener('click', (e)=>{
-          e.preventDefault(); startGame(btn.dataset.level);
-        }, {passive:true});
+        addTap(btn, (e)=>{ startGame(btn.dataset.level); });
       });
-      document.getElementById('backBtn').addEventListener('click', (e)=>{
-        e.preventDefault(); showMenu();
-      }, {passive:true});
+      addTap(document.getElementById('backBtn'), showMenu);
     }
 
     function showMenu(){
@@ -325,9 +335,6 @@
       const count=gameState.deckQueue.filter(c=>!c.removed).length;
       const fab = document.getElementById('deckCountFab');
       if (fab) fab.textContent = count;
-      // compat: se per caso esistesse ancora il vecchio ID
-      const legacy = document.getElementById('deckCount');
-      if (legacy) legacy.textContent = count;
     }
     function recalcRemaining(){
       let count=gameState.deckQueue.filter(c=>!c.removed).length;
@@ -350,7 +357,7 @@
           <div class="note-count">${gameState.noteCounts[note]||0}</div>
           <div class="note-badges">${badges}</div>
         `;
-        box.onclick=()=>handleNoteBoxClick(note);
+        addTap(box, ()=>handleNoteBoxClick(note));
         box.addEventListener('dragover', e=>e.preventDefault());
         box.addEventListener('drop', e=>{
           e.preventDefault();
@@ -394,7 +401,8 @@
         el.addEventListener('dragstart', (e)=>{ gameState.isDragging=true; e.dataTransfer.setData('text/plain', String(index)); updateDropTargets(); });
         el.addEventListener('dragend', ()=>{ gameState.isDragging=false; updateDropTargets(); });
       } else el.removeAttribute('draggable');
-      el.onclick=()=>handleCardClick(index);
+
+      addTap(el, ()=>handleCardClick(index));
       return el;
     }
 
@@ -403,7 +411,7 @@
       const card=gameState.playCards[index]; if(!card||card.removed) return;
       if(!card.faceUp){
         card.faceUp=true; gameState.selectedCard=index;
-        renderPlayArea(); updateAnswerBoxesActivation();
+        renderPlayArea(); updateAnswerBoxesActivation();           // accendi subito
       }else{
         gameState.selectedCard=(gameState.selectedCard===index)?null:index;
         renderPlayArea(); updateAnswerBoxesActivation(); updateDropTargets();
