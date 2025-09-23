@@ -5,13 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0" />
   <title>Scale Spider</title>
 
+  <!-- PWA opzionale: collega il tuo manifest se lo usi -->
   <meta name="theme-color" content="#0f172a" />
-  <link rel="manifest" href="manifest.webmanifest" />
+  <!-- <link rel="manifest" href="manifest.webmanifest" /> -->
 
+  <!-- iOS -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Scale Spider" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <!-- Se hai un PNG: <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" /> -->
 
   <style>
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -56,7 +58,12 @@
     .play-area::-webkit-scrollbar{height:8px}
     .play-area::-webkit-scrollbar-thumb{background:rgba(59,130,246,.3);border-radius:4px}
 
-    .advance-box{width:92px;min-width:92px;background:transparent;border:1px solid rgba(59,130,246,.45);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px;cursor:pointer;transition:transform .15s ease, box-shadow .15s ease}
+    .advance-box{
+      width:92px; min-width:92px; min-height:120px;
+      background:transparent; border:1px solid rgba(59,130,246,.45); border-radius:12px;
+      display:grid; grid-template-rows:auto auto auto; align-content:center; justify-items:center; row-gap:6px;
+      padding:10px; cursor:pointer; transition:transform .15s ease, box-shadow .15s ease
+    }
     .advance-box:active{transform:translateY(1px)}
     .advance-title{font-weight:800;color:#3b82f6;font-size:.9rem;letter-spacing:.03em}
     .advance-count{font-size:1.4rem;color:#3b82f6;font-weight:800}
@@ -107,7 +114,7 @@
       <div class="level-selection">
         <button class="level-btn" data-level="easy">
           <div>🎵 Facile</div>
-          <div class="level-description">3 tonalità casuali</div>
+          <div class="level-description">3 tonalità casuali (almeno una con alterazioni)</div>
         </button>
         <button class="level-btn" data-level="medium">
           <div>🎼 Medio</div>
@@ -142,11 +149,13 @@
       <div class="play-area-container">
         <div class="play-wrapper">
           <div class="play-area" id="playArea"></div>
-          <button class="advance-box" id="advanceBtn" aria-label="Avanza carte">
+
+          <!-- BOX DESTRA AVANZA -->
+          <div class="advance-box" id="advanceBtn" role="button" tabindex="0" aria-label="Avanza carte">
             <div class="advance-title">AVANZA</div>
             <div class="advance-count" id="deckCount">0</div>
             <div class="advance-hint">↻ ruota mano</div>
-          </button>
+          </div>
         </div>
       </div>
 
@@ -177,18 +186,17 @@
 
   <script>
     // ======== Dati musicali =========
-    // Box in notazione # (12 semitoni):
+    // I 12 box sono in notazione con #. Le carte possono avere root con # o ♭ (F#, Bb, Ab, ...).
     const BOX_NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 
-    // Mappa per convertire keys in indice 0..11
     const NOTE_TO_INDEX = {
       'C':0,'C#':1,'Db':1,'D':2,'D#':3,'Eb':3,'E':4,'F':5,'E#':5,
       'F#':6,'Gb':6,'G':7,'G#':8,'Ab':8,'A':9,'A#':10,'Bb':10,'B':11,'Cb':11
     };
 
-    // Tonalità possibili (12 pitch class senza keys problematiche E#/B# sulle carte)
+    // Set completo di tonalità possibili
     const FULL_KEYS = ['C','G','D','A','E','B','F#','F','Bb','Eb','Ab','Db'];
-    const NATURALS  = ['C','F','G']; // usato per garantire almeno una alterata su "facile"
+    const NATURALS  = ['C','F','G']; // per garantire alterazioni in "Facile"
 
     const MAJOR_INTERVALS = [0,2,4,5,7,9,11];
     const ROMAN = ['I','II','III','IV','V','VI','VII'];
@@ -209,14 +217,19 @@
       cardsRemaining: 0,
       isDragging: false,
       handSize: 5,
-      noteCounts: {} // contatore per ogni box note
+      noteCounts: {} // nota -> count
     };
 
-    // ======== Avvio UI =========
+    // ======== Bootstrap UI =========
     window.addEventListener('DOMContentLoaded', () => {
       initMenu();
-      document.getElementById('advanceBtn').addEventListener('click', dealNextHand, {passive:true});
       renderNoteBoxes(); // prepara i 12 box
+
+      const adv = document.getElementById('advanceBtn');
+      adv.addEventListener('click', dealNextHand, {passive:true});
+      adv.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); dealNextHand(); }
+      });
     });
 
     function initMenu(){
@@ -237,16 +250,15 @@
       document.getElementById('winModal').classList.remove('active');
     }
 
-    // ======== Selezione casuale delle tonalità per livello =========
+    // ======== Scelta casuale delle tonalità =========
     function pickKeysForLevel(level){
       const nByLevel = { easy:3, medium:6, hard:9, expert:12 };
       const n = nByLevel[level] || 3;
       const pool = shuffle(FULL_KEYS.slice());
       const pick = pool.slice(0, n);
 
-      // Per facile, assicurati almeno una alterata (# o ♭)
+      // In "Facile" garantisci almeno 1 tonalità con alterazione (#/♭)
       if (level === 'easy' && pick.every(k => NATURALS.includes(k))) {
-        // sostituisci uno a caso con una alterata dal resto del pool
         const altered = pool.find(k => !NATURALS.includes(k));
         if (altered) pick[Math.floor(Math.random()*pick.length)] = altered;
       }
@@ -268,13 +280,10 @@
         noteCounts: {}
       };
 
-      // reset contatori dei box
       BOX_NOTES.forEach(n => gameState.noteCounts[n] = 0);
 
       const keys = pickKeysForLevel(level);
       const deck = [];
-
-      // genera le carte (7 gradi per ogni tonalità scelta)
       keys.forEach(root=>{
         const scale = majorScaleSharpNames(root);
         for (let deg = 1; deg <= 7; deg++){
@@ -325,6 +334,7 @@
       recalcRemaining();
     }
     function dealNextHand(){
+      // rimetti in coda tutte le carte scoperte/non risposte
       for (let i=0;i<gameState.playCards.length;i++){
         const c = gameState.playCards[i];
         if (c && !c.removed){
@@ -332,6 +342,7 @@
           gameState.playCards[i] = null;
         }
       }
+      // pesca nuove
       for (let i=0;i<gameState.playCards.length;i++){
         if (!gameState.playCards[i]) gameState.playCards[i] = drawFromQueue() || null;
       }
@@ -373,7 +384,10 @@
           <div class="note-name">${note}</div>
           <div class="note-count">${gameState.noteCounts[note] || 0}</div>
         `;
+        // Tap primario (iOS safe)
         box.onclick = () => handleNoteBoxClick(note);
+
+        // DnD (desktop/Android)
         box.addEventListener('dragover', e=>e.preventDefault());
         box.addEventListener('drop', e=>{
           e.preventDefault();
@@ -384,6 +398,7 @@
           if (!card || !card.faceUp) return;
           placeCardOnNote(card, idx, note);
         });
+
         c.appendChild(box);
       });
     }
@@ -406,6 +421,7 @@
       el.className = `card ${card.faceUp ? 'face-up' : 'face-down'}`;
       el.dataset.index = index;
       if (gameState.selectedCard === index) el.classList.add('selected');
+
       el.innerHTML = `
         <div class="card-back">
           <div class="card-back-icon">🕷️</div>
@@ -418,7 +434,8 @@
           <div class="degree-text">grado</div>
         </div>
       `;
-      // DnD (non affidabile su iOS, ma ok su desktop/Android)
+
+      // Drag & drop (non affidabile su iOS)
       if (card.faceUp && !card.removed && !/iPhone|iPad|iPod/i.test(navigator.userAgent)){
         el.setAttribute('draggable','true');
         el.addEventListener('dragstart', (e)=>{
@@ -430,7 +447,9 @@
           gameState.isDragging = false;
           updateDropTargets();
         });
-      } else el.removeAttribute('draggable');
+      } else {
+        el.removeAttribute('draggable');
+      }
 
       el.onclick = () => handleCardClick(index);
       return el;
@@ -443,14 +462,14 @@
 
       if (!card.faceUp){
         card.faceUp = true;
-        gameState.selectedCard = index;
+        gameState.selectedCard = index;        // auto-seleziona
         renderPlayArea();
-        updateAnswerBoxesActivation(); // accendi tutti i box (no spoiler)
+        updateAnswerBoxesActivation();          // accendi tutti i box (no spoiler)
       } else {
         gameState.selectedCard = (gameState.selectedCard === index) ? null : index;
         renderPlayArea();
         updateAnswerBoxesActivation();
-        updateDropTargets(); // il corretto si illumina solo durante drag
+        updateDropTargets();                    // il corretto si illumina solo durante drag
       }
     }
 
@@ -488,6 +507,7 @@
         gameState.successCount++;
         gameState.noteCounts[note] = (gameState.noteCounts[note] || 0) + 1;
         showStatus('✅','Corretto!');
+
         const el = document.querySelector(`.card[data-index="${cardIndex}"]`);
         if (el) el.classList.add('disappearing');
 
