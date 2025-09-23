@@ -3,17 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0" />
-  <title>Scale Spider</title>
+  <title>Scale Spider v0.8</title>
 
-  <!-- PWA opzionale -->
   <meta name="theme-color" content="#0f172a" />
-  <!-- <link rel="manifest" href="manifest.webmanifest" /> -->
-
-  <!-- iOS -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Scale Spider" />
-  <!-- <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" /> -->
 
   <style>
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -35,6 +30,7 @@
     .game-screen.active{display:block}
     .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
     .game-title{font-size:1.35rem;font-weight:700;color:#3b82f6}
+    .ver-chip{font-size:.7rem;color:#94a3b8;margin-left:6px}
     .stats{display:flex;gap:12px;align-items:center}
     .stat{display:flex;align-items:center;gap:6px;font-size:1rem}
     .stat-value{font-weight:700}
@@ -59,6 +55,9 @@
     .play-area{flex:1;display:flex;gap:10px;overflow-x:auto;padding-bottom:8px}
     .play-area::-webkit-scrollbar{height:8px}
     .play-area::-webkit-scrollbar-thumb{background:rgba(59,130,246,.3);border-radius:4px}
+
+    /* HIDE any legacy right-side advance box if it still exists */
+    .advance-box{display:none !important}
 
     /* Cards */
     .card{min-width:80px;width:80px;height:120px;border-radius:12px;cursor:pointer;transition:all .2s ease;transform-style:preserve-3d;position:relative;touch-action:manipulation}
@@ -88,43 +87,22 @@
 
     /* FAB Avanza */
     .fab-advance{
-      position: fixed;
-      right: 16px;
-      bottom: 16px;
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      background: linear-gradient(135deg,#3b82f6,#8b5cf6);
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      font-weight: 900;
+      position: fixed; right: 16px; bottom: 16px;
+      width: 56px; height: 56px; border-radius: 50%;
+      background: linear-gradient(135deg,#3b82f6,#8b5cf6); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; font-weight: 900;
       box-shadow: 0 8px 24px rgba(0,0,0,.35);
       border: 1px solid rgba(255,255,255,.2);
-      cursor: pointer;
-      z-index: 1100; /* sopra allo status */
-      user-select: none;
+      cursor: pointer; z-index: 1100; user-select: none;
     }
     .fab-advance:active{ transform: translateY(1px) scale(.98); }
     .fab-advance[aria-disabled="true"]{ opacity:.6; pointer-events:none; }
     .fab-badge{
-      position: absolute;
-      top: -4px;
-      right: -4px;
-      min-width: 22px;
-      height: 22px;
-      padding: 0 6px;
-      border-radius: 11px;
-      background: #0ea5e9;
-      color: #fff;
-      font-size: 12px;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 2px solid #0f172a;
+      position: absolute; top: -4px; right: -4px;
+      min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px;
+      background: #0ea5e9; color:#fff; font-size: 12px; font-weight: 800;
+      display:flex; align-items:center; justify-content:center; border: 2px solid #0f172a;
     }
 
     @media (max-width:390px){
@@ -165,7 +143,7 @@
     <!-- Gioco -->
     <div class="game-screen" id="game">
       <div class="header">
-        <div class="game-title">🕷️ Scale Spider</div>
+        <div class="game-title">🕷️ Scale Spider <span class="ver-chip">v0.8</span></div>
         <div class="stats">
           <div class="stat">✅ <span class="stat-value" id="success">0</span></div>
           <div class="stat">❌ <span class="stat-value" id="errors">0</span></div>
@@ -209,9 +187,9 @@
   </div>
 
   <!-- FAB Avanza -->
-  <div class="fab-advance" id="advanceBtn" role="button" tabindex="0" aria-label="Avanza (↻)" title="Avanza (↻)">
+  <div class="fab-advance" id="advanceFab" role="button" tabindex="0" aria-label="Avanza (↻)" title="Avanza (↻)">
     ↻
-    <span class="fab-badge" id="deckCount">0</span>
+    <span class="fab-badge" id="deckCountFab">0</span>
   </div>
 
   <script>
@@ -242,8 +220,8 @@
       cardsRemaining: 0,
       isDragging: false,
       handSize: 5,
-      noteCounts: {},          // nota -> contatore
-      badgesByNote: {}         // nota -> array badge "VI di B"
+      noteCounts: {},
+      badgesByNote: {}
     };
 
     // ======== UI bootstrap =========
@@ -251,7 +229,7 @@
       initMenu();
       renderNoteBoxes();
 
-      const adv = document.getElementById('advanceBtn');
+      const adv = document.getElementById('advanceFab');
       adv.addEventListener('click', dealNextHand, {passive:true});
       adv.addEventListener('keydown', (e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); dealNextHand(); }});
     });
@@ -343,7 +321,14 @@
       updateDeckCount(); recalcRemaining(); renderPlayArea(); updateAnswerBoxesActivation();
       showStatus('↻','Nuova mano');
     }
-    function updateDeckCount(){ const count=gameState.deckQueue.filter(c=>!c.removed).length; document.getElementById('deckCount').textContent=count; }
+    function updateDeckCount(){
+      const count=gameState.deckQueue.filter(c=>!c.removed).length;
+      const fab = document.getElementById('deckCountFab');
+      if (fab) fab.textContent = count;
+      // compat: se per caso esistesse ancora il vecchio ID
+      const legacy = document.getElementById('deckCount');
+      if (legacy) legacy.textContent = count;
+    }
     function recalcRemaining(){
       let count=gameState.deckQueue.filter(c=>!c.removed).length;
       for(const c of gameState.playCards) if(c && !c.removed) count++;
@@ -365,9 +350,7 @@
           <div class="note-count">${gameState.noteCounts[note]||0}</div>
           <div class="note-badges">${badges}</div>
         `;
-        // Tap (iOS-safe)
         box.onclick=()=>handleNoteBoxClick(note);
-        // DnD (desktop/Android)
         box.addEventListener('dragover', e=>e.preventDefault());
         box.addEventListener('drop', e=>{
           e.preventDefault();
@@ -456,7 +439,6 @@
         gameState.noteCounts[note]=(gameState.noteCounts[note]||0)+1;
         (gameState.badgesByNote[note]||=[]).push(`${ROMAN[card.degree-1]} di ${card.root}`);
         showStatus('✅','Corretto!');
-
         const el=document.querySelector(`.card[data-index="${cardIndex}"]`);
         const removeNow=()=>{
           card.removed=true;
@@ -466,12 +448,8 @@
           updateStats(); renderNoteBoxes(); renderPlayArea(); updateAnswerBoxesActivation(); recalcRemaining();
           if(gameState.cardsRemaining===0) showWin();
         };
-        if(el){
-          el.classList.add('disappearing');
-          el.addEventListener('animationend', removeNow, {once:true});
-        }else{
-          removeNow();
-        }
+        if(el){ el.classList.add('disappearing'); el.addEventListener('animationend', removeNow, {once:true}); }
+        else { removeNow(); }
       }else{
         gameState.errorCount++; gameState.selectedCard=null;
         updateStats(); renderPlayArea(); updateAnswerBoxesActivation();
