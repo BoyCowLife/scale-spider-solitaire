@@ -5,15 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0" />
   <title>Scale Spider</title>
 
-  <!-- PWA opzionale: collega il tuo manifest se lo usi -->
   <meta name="theme-color" content="#0f172a" />
   <!-- <link rel="manifest" href="manifest.webmanifest" /> -->
 
-  <!-- iOS -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Scale Spider" />
-  <!-- Se hai un PNG: <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" /> -->
+  <!-- <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" /> -->
 
   <style>
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -48,10 +46,12 @@
     .note-box{background:rgba(255,255,255,.03);border:2px dashed rgba(59,130,246,.25);border-radius:12px;padding:14px 8px;text-align:center;transition:all .2s ease;cursor:pointer;position:relative}
     .note-box.answer-active{border-color:rgba(59,130,246,.55);background:rgba(59,130,246,.15);box-shadow:0 0 10px rgba(59,130,246,.25)}
     .note-box.can-drop{border-color:#10b981;background:rgba(16,185,129,.15);box-shadow:0 0 15px rgba(16,185,129,.3)}
-    .note-name{font-size:1.2rem;font-weight:700;color:#3b82f6}
+    .note-name{font-size:1.15rem;font-weight:800;color:#3b82f6}
     .note-count{font-size:.8rem;color:#64748b;margin-top:4px}
+    .note-badges{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+    .note-badge{background:#10b981;color:#0b1424;border-radius:6px;padding:2px 6px;font-size:.7rem;font-weight:800}
 
-    /* Play area + Advance box */
+    /* Play area + Advance */
     .play-area-container{background:rgba(0,0,0,.2);border-radius:16px;padding:12px;margin-bottom:16px}
     .play-wrapper{display:flex;gap:12px;align-items:stretch}
     .play-area{flex:1;display:flex;gap:10px;overflow-x:auto;padding-bottom:8px}
@@ -114,7 +114,7 @@
       <div class="level-selection">
         <button class="level-btn" data-level="easy">
           <div>🎵 Facile</div>
-          <div class="level-description">3 tonalità casuali (almeno una con alterazioni)</div>
+          <div class="level-description">3 tonalità casuali (almeno una con #/♭)</div>
         </button>
         <button class="level-btn" data-level="medium">
           <div>🎼 Medio</div>
@@ -131,7 +131,7 @@
       </div>
     </div>
 
-    <!-- Game -->
+    <!-- Gioco -->
     <div class="game-screen" id="game">
       <div class="header">
         <div class="game-title">🕷️ Scale Spider</div>
@@ -150,7 +150,7 @@
         <div class="play-wrapper">
           <div class="play-area" id="playArea"></div>
 
-          <!-- BOX DESTRA AVANZA -->
+          <!-- BOX AVANZA -->
           <div class="advance-box" id="advanceBtn" role="button" tabindex="0" aria-label="Avanza carte">
             <div class="advance-title">AVANZA</div>
             <div class="advance-count" id="deckCount">0</div>
@@ -186,18 +186,13 @@
 
   <script>
     // ======== Dati musicali =========
-    // I 12 box sono in notazione con #. Le carte possono avere root con # o ♭ (F#, Bb, Ab, ...).
     const BOX_NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-
     const NOTE_TO_INDEX = {
       'C':0,'C#':1,'Db':1,'D':2,'D#':3,'Eb':3,'E':4,'F':5,'E#':5,
       'F#':6,'Gb':6,'G':7,'G#':8,'Ab':8,'A':9,'A#':10,'Bb':10,'B':11,'Cb':11
     };
-
-    // Set completo di tonalità possibili
     const FULL_KEYS = ['C','G','D','A','E','B','F#','F','Bb','Eb','Ab','Db'];
-    const NATURALS  = ['C','F','G']; // per garantire alterazioni in "Facile"
-
+    const NATURALS  = ['C','F','G'];
     const MAJOR_INTERVALS = [0,2,4,5,7,9,11];
     const ROMAN = ['I','II','III','IV','V','VI','VII'];
 
@@ -217,26 +212,24 @@
       cardsRemaining: 0,
       isDragging: false,
       handSize: 5,
-      noteCounts: {} // nota -> count
+      noteCounts: {},          // nota -> contatore
+      badgesByNote: {}         // nota -> array di badge "VI di B"
     };
 
-    // ======== Bootstrap UI =========
+    // ======== UI bootstrap =========
     window.addEventListener('DOMContentLoaded', () => {
       initMenu();
-      renderNoteBoxes(); // prepara i 12 box
+      renderNoteBoxes();
 
       const adv = document.getElementById('advanceBtn');
       adv.addEventListener('click', dealNextHand, {passive:true});
-      adv.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); dealNextHand(); }
-      });
+      adv.addEventListener('keydown', (e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); dealNextHand(); }});
     });
 
     function initMenu(){
       document.querySelectorAll('.level-btn').forEach(btn=>{
         btn.addEventListener('click', (e)=>{
-          e.preventDefault();
-          startGame(btn.dataset.level);
+          e.preventDefault(); startGame(btn.dataset.level);
         }, {passive:true});
       });
       document.getElementById('backBtn').addEventListener('click', (e)=>{
@@ -250,14 +243,12 @@
       document.getElementById('winModal').classList.remove('active');
     }
 
-    // ======== Scelta casuale delle tonalità =========
+    // ======== Scelta casuale tonalità =========
     function pickKeysForLevel(level){
       const nByLevel = { easy:3, medium:6, hard:9, expert:12 };
       const n = nByLevel[level] || 3;
       const pool = shuffle(FULL_KEYS.slice());
       const pick = pool.slice(0, n);
-
-      // In "Facile" garantisci almeno 1 tonalità con alterazione (#/♭)
       if (level === 'easy' && pick.every(k => NATURALS.includes(k))) {
         const altered = pool.find(k => !NATURALS.includes(k));
         if (altered) pick[Math.floor(Math.random()*pick.length)] = altered;
@@ -277,29 +268,28 @@
         cardsRemaining: 0,
         isDragging: false,
         handSize: 5,
-        noteCounts: {}
+        noteCounts: {},
+        badgesByNote: {}
       };
 
-      BOX_NOTES.forEach(n => gameState.noteCounts[n] = 0);
+      BOX_NOTES.forEach(n => { gameState.noteCounts[n]=0; gameState.badgesByNote[n]=[]; });
 
       const keys = pickKeysForLevel(level);
       const deck = [];
       keys.forEach(root=>{
         const scale = majorScaleSharpNames(root);
-        for (let deg = 1; deg <= 7; deg++){
+        for (let deg=1; deg<=7; deg++){
           deck.push({
-            root,
-            degree: deg,
+            root, degree:deg,
             targetNote: scale[deg-1],
-            id: `${root}-${deg}-${Math.random().toString(36).slice(2)}`,
-            faceUp: false,
-            removed: false
+            id:`${root}-${deg}-${Math.random().toString(36).slice(2)}`,
+            faceUp:false, removed:false
           });
         }
       });
 
       gameState.deckQueue = shuffle(deck);
-      for (let i=0;i<gameState.handSize;i++) gameState.playCards[i] = drawFromQueue();
+      for (let i=0;i<gameState.handSize;i++) gameState.playCards[i]=drawFromQueue();
 
       recalcRemaining();
       updateStats();
@@ -313,116 +303,66 @@
     }
 
     // ======== Deck / Queue =========
-    function shuffle(a){
-      const arr=[...a];
-      for (let i=arr.length-1;i>0;i--){
-        const j=Math.floor(Math.random()*(i+1));
-        [arr[i],arr[j]]=[arr[j],arr[i]];
-      }
-      return arr;
-    }
-    function drawFromQueue(){
-      while (gameState.deckQueue.length){
-        const c = gameState.deckQueue.shift();
-        if (!c.removed) return c;
-      }
-      return null;
-    }
-    function addNewCard(slotIndex){
-      gameState.playCards[slotIndex] = drawFromQueue();
-      updateDeckCount();
-      recalcRemaining();
-    }
+    function shuffle(a){ const arr=[...a]; for(let i=arr.length-1;i>0;i--){ const j=Math.random()* (i+1) |0; [arr[i],arr[j]]=[arr[j],arr[i]];} return arr; }
+    function drawFromQueue(){ while(gameState.deckQueue.length){ const c=gameState.deckQueue.shift(); if(!c.removed) return c; } return null; }
+    function addNewCard(slotIndex){ gameState.playCards[slotIndex]=drawFromQueue(); updateDeckCount(); recalcRemaining(); }
     function dealNextHand(){
-      // rimetti in coda tutte le carte scoperte/non risposte
-      for (let i=0;i<gameState.playCards.length;i++){
-        const c = gameState.playCards[i];
-        if (c && !c.removed){
-          gameState.deckQueue.push(c);
-          gameState.playCards[i] = null;
-        }
-      }
-      // pesca nuove
-      for (let i=0;i<gameState.playCards.length;i++){
-        if (!gameState.playCards[i]) gameState.playCards[i] = drawFromQueue() || null;
-      }
-      gameState.selectedCard = null;
-      updateDeckCount();
-      recalcRemaining();
-      renderPlayArea();
-      updateAnswerBoxesActivation();
+      for(let i=0;i<gameState.playCards.length;i++){ const c=gameState.playCards[i]; if(c && !c.removed){ gameState.deckQueue.push(c); gameState.playCards[i]=null; } }
+      for(let i=0;i<gameState.playCards.length;i++){ if(!gameState.playCards[i]) gameState.playCards[i]=drawFromQueue()||null; }
+      gameState.selectedCard=null;
+      updateDeckCount(); recalcRemaining(); renderPlayArea(); updateAnswerBoxesActivation();
       showStatus('↻','Nuova mano');
     }
-    function updateDeckCount(){
-      const count = gameState.deckQueue.filter(c=>!c.removed).length;
-      document.getElementById('deckCount').textContent = count;
-    }
+    function updateDeckCount(){ const count=gameState.deckQueue.filter(c=>!c.removed).length; document.getElementById('deckCount').textContent=count; }
     function recalcRemaining(){
-      let count = gameState.deckQueue.filter(c=>!c.removed).length;
-      for (const c of gameState.playCards) if (c && !c.removed) count++;
-      gameState.cardsRemaining = count;
-      updateCardsRemaining();
+      let count=gameState.deckQueue.filter(c=>!c.removed).length;
+      for(const c of gameState.playCards) if(c && !c.removed) count++;
+      gameState.cardsRemaining=count; updateCardsRemaining();
     }
 
     // ======== Render =========
-    function updateStats(){
-      document.getElementById('success').textContent = gameState.successCount;
-      document.getElementById('errors').textContent  = gameState.errorCount;
-    }
-    function updateCardsRemaining(){
-      document.getElementById('cardsRemaining').textContent = gameState.cardsRemaining;
-    }
+    function updateStats(){ document.getElementById('success').textContent=gameState.successCount; document.getElementById('errors').textContent=gameState.errorCount; }
+    function updateCardsRemaining(){ document.getElementById('cardsRemaining').textContent=gameState.cardsRemaining; }
 
     function renderNoteBoxes(){
-      const c = document.getElementById('noteBoxes');
-      c.innerHTML = '';
+      const c=document.getElementById('noteBoxes'); c.innerHTML='';
       BOX_NOTES.forEach(note=>{
-        const box = document.createElement('div');
-        box.className = 'note-box';
-        box.dataset.note = note;
-        box.innerHTML = `
+        const badges = (gameState.badgesByNote[note]||[]).map(b=>`<span class="note-badge">${b}</span>`).join('');
+        const box=document.createElement('div');
+        box.className='note-box'; box.dataset.note=note;
+        box.innerHTML=`
           <div class="note-name">${note}</div>
-          <div class="note-count">${gameState.noteCounts[note] || 0}</div>
+          <div class="note-count">${gameState.noteCounts[note]||0}</div>
+          <div class="note-badges">${badges}</div>
         `;
-        // Tap primario (iOS safe)
-        box.onclick = () => handleNoteBoxClick(note);
-
-        // DnD (desktop/Android)
+        box.onclick=()=>handleNoteBoxClick(note);
         box.addEventListener('dragover', e=>e.preventDefault());
         box.addEventListener('drop', e=>{
           e.preventDefault();
-          const idxStr = e.dataTransfer.getData('text/plain');
-          const idx = idxStr ? parseInt(idxStr) : gameState.selectedCard;
-          if (!Number.isInteger(idx)) return;
-          const card = gameState.playCards[idx];
-          if (!card || !card.faceUp) return;
+          const idxStr=e.dataTransfer.getData('text/plain');
+          const idx=idxStr?parseInt(idxStr):gameState.selectedCard;
+          if(!Number.isInteger(idx)) return;
+          const card=gameState.playCards[idx];
+          if(!card||!card.faceUp) return;
           placeCardOnNote(card, idx, note);
         });
-
         c.appendChild(box);
       });
     }
 
     function renderPlayArea(){
-      const c = document.getElementById('playArea');
-      c.innerHTML = '';
-      gameState.playCards.forEach((card, idx)=>{
-        if (card && !card.removed) c.appendChild(createCard(card, idx));
-        else {
-          const ph = document.createElement('div');
-          ph.style.width='80px'; ph.style.height='120px'; ph.style.borderRadius='12px'; ph.style.opacity='0.15';
-          c.appendChild(ph);
-        }
+      const c=document.getElementById('playArea'); c.innerHTML='';
+      gameState.playCards.forEach((card,idx)=>{
+        if(card && !card.removed) c.appendChild(createCard(card,idx));
+        else { const ph=document.createElement('div'); ph.style.width='80px'; ph.style.height='120px'; ph.style.borderRadius='12px'; ph.style.opacity='0.15'; c.appendChild(ph); }
       });
     }
 
-    function createCard(card, index){
-      const el = document.createElement('div');
-      el.className = `card ${card.faceUp ? 'face-up' : 'face-down'}`;
-      el.dataset.index = index;
-      if (gameState.selectedCard === index) el.classList.add('selected');
-
-      el.innerHTML = `
+    function createCard(card,index){
+      const el=document.createElement('div');
+      el.className=`card ${card.faceUp?'face-up':'face-down'}`; el.dataset.index=index;
+      if(gameState.selectedCard===index) el.classList.add('selected');
+      el.innerHTML=`
         <div class="card-back">
           <div class="card-back-icon">🕷️</div>
           <div class="card-back-text">TAP</div>
@@ -434,121 +374,94 @@
           <div class="degree-text">grado</div>
         </div>
       `;
-
-      // Drag & drop (non affidabile su iOS)
-      if (card.faceUp && !card.removed && !/iPhone|iPad|iPod/i.test(navigator.userAgent)){
+      if(card.faceUp && !card.removed && !/iPhone|iPad|iPod/i.test(navigator.userAgent)){
         el.setAttribute('draggable','true');
-        el.addEventListener('dragstart', (e)=>{
-          gameState.isDragging = true;
-          e.dataTransfer.setData('text/plain', String(index));
-          updateDropTargets();
-        });
-        el.addEventListener('dragend', ()=>{
-          gameState.isDragging = false;
-          updateDropTargets();
-        });
-      } else {
-        el.removeAttribute('draggable');
-      }
-
-      el.onclick = () => handleCardClick(index);
+        el.addEventListener('dragstart', (e)=>{ gameState.isDragging=true; e.dataTransfer.setData('text/plain', String(index)); updateDropTargets(); });
+        el.addEventListener('dragend', ()=>{ gameState.isDragging=false; updateDropTargets(); });
+      } else el.removeAttribute('draggable');
+      el.onclick=()=>handleCardClick(index);
       return el;
     }
 
     // ======== Interazione =========
     function handleCardClick(index){
-      const card = gameState.playCards[index];
-      if (!card || card.removed) return;
-
-      if (!card.faceUp){
-        card.faceUp = true;
-        gameState.selectedCard = index;        // auto-seleziona
-        renderPlayArea();
-        updateAnswerBoxesActivation();          // accendi tutti i box (no spoiler)
-      } else {
-        gameState.selectedCard = (gameState.selectedCard === index) ? null : index;
-        renderPlayArea();
-        updateAnswerBoxesActivation();
-        updateDropTargets();                    // il corretto si illumina solo durante drag
+      const card=gameState.playCards[index]; if(!card||card.removed) return;
+      if(!card.faceUp){
+        card.faceUp=true; gameState.selectedCard=index;
+        renderPlayArea(); updateAnswerBoxesActivation();
+      }else{
+        gameState.selectedCard=(gameState.selectedCard===index)?null:index;
+        renderPlayArea(); updateAnswerBoxesActivation(); updateDropTargets();
       }
     }
 
     function handleNoteBoxClick(note){
-      if (gameState.selectedCard === null) return;
-      const card = gameState.playCards[gameState.selectedCard];
-      if (!card || !card.faceUp) return;
+      if(gameState.selectedCard===null) return;
+      const card=gameState.playCards[gameState.selectedCard]; if(!card||!card.faceUp) return;
       placeCardOnNote(card, gameState.selectedCard, note);
     }
 
     function updateDropTargets(){
       document.querySelectorAll('.note-box').forEach(b=>b.classList.remove('can-drop'));
-      if (!gameState.isDragging) return;
-      if (gameState.selectedCard !== null){
-        const card = gameState.playCards[gameState.selectedCard];
-        if (card && card.faceUp){
-          const box = document.querySelector(`[data-note="${card.targetNote}"]`);
-          if (box) box.classList.add('can-drop');
+      if(!gameState.isDragging) return;
+      if(gameState.selectedCard!==null){
+        const card=gameState.playCards[gameState.selectedCard];
+        if(card && card.faceUp){
+          const box=document.querySelector(`[data-note="${card.targetNote}"]`);
+          if(box) box.classList.add('can-drop');
         }
       }
     }
 
     function updateAnswerBoxesActivation(){
-      const active = (gameState.selectedCard !== null &&
-                      gameState.playCards[gameState.selectedCard] &&
-                      gameState.playCards[gameState.selectedCard].faceUp &&
-                      !gameState.isDragging);
-      document.querySelectorAll('.note-box').forEach(box => {
-        box.classList.toggle('answer-active', !!active);
-      });
+      const active=(gameState.selectedCard!==null && gameState.playCards[gameState.selectedCard] && gameState.playCards[gameState.selectedCard].faceUp && !gameState.isDragging);
+      document.querySelectorAll('.note-box').forEach(box=>box.classList.toggle('answer-active', !!active));
     }
 
     function placeCardOnNote(card, cardIndex, note){
-      if (card.targetNote === note){
+      if(card.targetNote===note){
         gameState.successCount++;
-        gameState.noteCounts[note] = (gameState.noteCounts[note] || 0) + 1;
+        gameState.noteCounts[note]=(gameState.noteCounts[note]||0)+1;
+        (gameState.badgesByNote[note]||=[]).push(`${ROMAN[card.degree-1]} di ${card.root}`);
         showStatus('✅','Corretto!');
 
-        const el = document.querySelector(`.card[data-index="${cardIndex}"]`);
-        if (el) el.classList.add('disappearing');
-
-        setTimeout(()=>{
-          card.removed = true;
-          gameState.playCards[cardIndex] = null;
-          gameState.selectedCard = null;
-
+        // animazione + rimozione robusta
+        const el=document.querySelector(`.card[data-index="${cardIndex}"]`);
+        const removeNow=()=>{
+          card.removed=true;
+          gameState.playCards[cardIndex]=null;
+          gameState.selectedCard=null;
           addNewCard(cardIndex);
-          updateStats();
-          renderNoteBoxes();
-          renderPlayArea();
-          updateAnswerBoxesActivation();
-          recalcRemaining();
-
-          if (gameState.cardsRemaining === 0) showWin();
-        }, 450);
-      } else {
-        gameState.errorCount++;
-        gameState.selectedCard = null;
-        updateStats();
-        renderPlayArea();
-        updateAnswerBoxesActivation();
+          updateStats(); renderNoteBoxes(); renderPlayArea(); updateAnswerBoxesActivation(); recalcRemaining();
+          if(gameState.cardsRemaining===0) showWin();
+        };
+        if(el){
+          el.classList.add('disappearing');
+          el.addEventListener('animationend', removeNow, {once:true});
+        }else{
+          // fallback se non trova il nodo (capita su alcuni refresh DOM)
+          removeNow();
+        }
+      }else{
+        gameState.errorCount++; gameState.selectedCard=null;
+        updateStats(); renderPlayArea(); updateAnswerBoxesActivation();
         showStatus('❌', `Era ${card.targetNote}!`);
-        const box = document.querySelector(`[data-note="${note}"]`);
-        if (box){ box.style.animation='shake .5s'; setTimeout(()=>box.style.animation='',500); }
+        const box=document.querySelector(`[data-note="${note}"]`);
+        if(box){ box.style.animation='shake .5s'; setTimeout(()=>box.style.animation='',500); }
       }
     }
 
     // ======== Status & Win =========
-    function showStatus(icon, text){
-      const el = document.getElementById('statusMessage');
-      document.getElementById('statusIcon').textContent = icon;
-      document.getElementById('statusText').textContent = text;
-      el.classList.add('active');
-      setTimeout(()=> el.classList.remove('active'), 1400);
+    function showStatus(icon,text){
+      const el=document.getElementById('statusMessage');
+      document.getElementById('statusIcon').textContent=icon;
+      document.getElementById('statusText').textContent=text;
+      el.classList.add('active'); setTimeout(()=>el.classList.remove('active'),1400);
     }
 
     function showWin(){
-      document.getElementById('finalMoves').textContent = gameState.successCount + gameState.errorCount;
-      document.getElementById('finalErrors').textContent = gameState.errorCount;
+      document.getElementById('finalMoves').textContent=gameState.successCount+gameState.errorCount;
+      document.getElementById('finalErrors').textContent=gameState.errorCount;
       document.getElementById('winModal').classList.add('active');
     }
   </script>
