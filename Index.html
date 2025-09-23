@@ -5,9 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0" />
   <title>Scale Spider</title>
 
+  <!-- PWA opzionale -->
   <meta name="theme-color" content="#0f172a" />
   <!-- <link rel="manifest" href="manifest.webmanifest" /> -->
 
+  <!-- iOS -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Scale Spider" />
@@ -51,23 +53,12 @@
     .note-badges{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-top:6px}
     .note-badge{background:#10b981;color:#0b1424;border-radius:6px;padding:2px 6px;font-size:.7rem;font-weight:800}
 
-    /* Play area + Advance */
+    /* Play area */
     .play-area-container{background:rgba(0,0,0,.2);border-radius:16px;padding:12px;margin-bottom:16px}
     .play-wrapper{display:flex;gap:12px;align-items:stretch}
     .play-area{flex:1;display:flex;gap:10px;overflow-x:auto;padding-bottom:8px}
     .play-area::-webkit-scrollbar{height:8px}
     .play-area::-webkit-scrollbar-thumb{background:rgba(59,130,246,.3);border-radius:4px}
-
-    .advance-box{
-      width:92px; min-width:92px; min-height:120px;
-      background:transparent; border:1px solid rgba(59,130,246,.45); border-radius:12px;
-      display:grid; grid-template-rows:auto auto auto; align-content:center; justify-items:center; row-gap:6px;
-      padding:10px; cursor:pointer; transition:transform .15s ease, box-shadow .15s ease
-    }
-    .advance-box:active{transform:translateY(1px)}
-    .advance-title{font-weight:800;color:#3b82f6;font-size:.9rem;letter-spacing:.03em}
-    .advance-count{font-size:1.4rem;color:#3b82f6;font-weight:800}
-    .advance-hint{font-size:.7rem;color:#94a3b8}
 
     /* Cards */
     .card{min-width:80px;width:80px;height:120px;border-radius:12px;cursor:pointer;transition:all .2s ease;transform-style:preserve-3d;position:relative;touch-action:manipulation}
@@ -95,11 +86,51 @@
     .status-message{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.95);padding:8px 16px;border-radius:8px;font-size:.9rem;display:flex;align-items:center;gap:10px;opacity:0;transition:opacity .3s ease;z-index:1000}
     .status-message.active{opacity:1}
 
+    /* FAB Avanza */
+    .fab-advance{
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg,#3b82f6,#8b5cf6);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 900;
+      box-shadow: 0 8px 24px rgba(0,0,0,.35);
+      border: 1px solid rgba(255,255,255,.2);
+      cursor: pointer;
+      z-index: 1100; /* sopra allo status */
+      user-select: none;
+    }
+    .fab-advance:active{ transform: translateY(1px) scale(.98); }
+    .fab-advance[aria-disabled="true"]{ opacity:.6; pointer-events:none; }
+    .fab-badge{
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      min-width: 22px;
+      height: 22px;
+      padding: 0 6px;
+      border-radius: 11px;
+      background: #0ea5e9;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #0f172a;
+    }
+
     @media (max-width:390px){
       .note-boxes{grid-template-columns:repeat(3,1fr);gap:6px}
       .note-box{padding:12px 8px}
       .note-name{font-size:1.05rem}
-      .advance-box{width:84px;min-width:84px}
     }
     @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
   </style>
@@ -149,13 +180,6 @@
       <div class="play-area-container">
         <div class="play-wrapper">
           <div class="play-area" id="playArea"></div>
-
-          <!-- BOX AVANZA -->
-          <div class="advance-box" id="advanceBtn" role="button" tabindex="0" aria-label="Avanza carte">
-            <div class="advance-title">AVANZA</div>
-            <div class="advance-count" id="deckCount">0</div>
-            <div class="advance-hint">↻ ruota mano</div>
-          </div>
         </div>
       </div>
 
@@ -182,6 +206,12 @@
         <button class="modal-button" onclick="showMenu()">Nuovo Gioco</button>
       </div>
     </div>
+  </div>
+
+  <!-- FAB Avanza -->
+  <div class="fab-advance" id="advanceBtn" role="button" tabindex="0" aria-label="Avanza (↻)" title="Avanza (↻)">
+    ↻
+    <span class="fab-badge" id="deckCount">0</span>
   </div>
 
   <script>
@@ -213,7 +243,7 @@
       isDragging: false,
       handSize: 5,
       noteCounts: {},          // nota -> contatore
-      badgesByNote: {}         // nota -> array di badge "VI di B"
+      badgesByNote: {}         // nota -> array badge "VI di B"
     };
 
     // ======== UI bootstrap =========
@@ -303,7 +333,7 @@
     }
 
     // ======== Deck / Queue =========
-    function shuffle(a){ const arr=[...a]; for(let i=arr.length-1;i>0;i--){ const j=Math.random()* (i+1) |0; [arr[i],arr[j]]=[arr[j],arr[i]];} return arr; }
+    function shuffle(a){ const arr=[...a]; for(let i=arr.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [arr[i],arr[j]]=[arr[j],arr[i]];} return arr; }
     function drawFromQueue(){ while(gameState.deckQueue.length){ const c=gameState.deckQueue.shift(); if(!c.removed) return c; } return null; }
     function addNewCard(slotIndex){ gameState.playCards[slotIndex]=drawFromQueue(); updateDeckCount(); recalcRemaining(); }
     function dealNextHand(){
@@ -335,7 +365,9 @@
           <div class="note-count">${gameState.noteCounts[note]||0}</div>
           <div class="note-badges">${badges}</div>
         `;
+        // Tap (iOS-safe)
         box.onclick=()=>handleNoteBoxClick(note);
+        // DnD (desktop/Android)
         box.addEventListener('dragover', e=>e.preventDefault());
         box.addEventListener('drop', e=>{
           e.preventDefault();
@@ -425,7 +457,6 @@
         (gameState.badgesByNote[note]||=[]).push(`${ROMAN[card.degree-1]} di ${card.root}`);
         showStatus('✅','Corretto!');
 
-        // animazione + rimozione robusta
         const el=document.querySelector(`.card[data-index="${cardIndex}"]`);
         const removeNow=()=>{
           card.removed=true;
@@ -439,7 +470,6 @@
           el.classList.add('disappearing');
           el.addEventListener('animationend', removeNow, {once:true});
         }else{
-          // fallback se non trova il nodo (capita su alcuni refresh DOM)
           removeNow();
         }
       }else{
