@@ -6,13 +6,13 @@
     <title>Scale Spider Solitaire</title>
     
     <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#1a2332">
+    <meta name="theme-color" content="#10b981">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Scale Spider">
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiU2NhbGUgU3BpZGVyIFNvbGl0YWlyZSIsInNob3J0X25hbWUiOiJTY2FsZVNwaWRlciIsInN0YXJ0X3VybCI6Ii8iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjMWEyMzMyIiwidGhlbWVfY29sb3IiOiIjZjY3NDhhIiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEhOMlp5QjRiV3h1Y3owaWFIUjBjRG92TDNkM2R5NTNNeTV2Y21jdk1qQXdNQzl6ZG1jaUlIWnBaWGREYjNnOUlqQWdNQ0F4TURBZ01UQXdJaUIzYVdSMGFEMGlNVEF3SWlCb1pXbG5hSFE5SWpFd01DSWlJR1pwYkd3OUlpTm1Aamc0T0RvaVBqeHdZWFJvSUdROUlrMHhNQ0F5TUV3eU1DQTBNRXd6TUNBME1FdzBNQ0F6TUV3MU1DQXlNRXcyTUNBek1FdzNNQ0F5TUV3NE1DQXpNRXc1TUNBeU1Fd3hNREFnTTBWTlRVNUVOVGhOU3lJZ1ptbHNiRDBpSXpZM05EZzRZU0l2UGp3dmMzWm5QZ0k9PSIsInNpemVzIjoiMTkyeDE5MiIsInR5cGUiOiJpbWFnZS9zdmcreG1sIn1dfQ==">
+    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiU2NhbGUgU3BpZGVyIFNvbGl0YWlyZSIsInNob3J0X25hbWUiOiJTY2FsZVNwaWRlciIsInN0YXJ0X3VybCI6Ii8iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjMGYxNzJhIiwidGhlbWVfY29sb3IiOiIjMTBiOTgxIiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEhOMlp5QjRiV3h1Y3owaWFIUjBjRG92TDNkM2R5NTNNeTV2Y21jdk1qQXdNQzl6ZG1jaUlIWnBaWGREYjNnOUlqQWdNQ0F4TURBZ01UQXdJaUIzYVdSMGFEMGlNVEF3SWlCb1pXbG5hSFE5SWpFd01DSWlJR1pwYkd3OUlpTXhNR0k1T0RFaVBqeHdZWFJvSUdROUlrMHhNQ0F5TUV3eU1DQTBNRXd6TUNBNE1FdzBNQ0F6TUV3MU1DQXlNRXc2TUNBek1FdzNNQ0F5TUV3NE1DQXpNRXc5TUNBeU1Fd3hNREFnTTBWTlRVNUVOVGhOU3lJZ1ptbHNiRDBpSXpFd1lqazRNU0l2UGp3dmMzWm5QZ0k9PSIsInNpemVzIjoiMTkyeDE5MiIsInR5cGUiOiJpbWFnZS9zdmcreG1sIn1dfQ==">
     
     <style>
         * {
@@ -166,6 +166,8 @@
         .instructions-icon {
             margin-right: 6px;
         }
+
+        /* Game Board */
         .game-board {
             display: grid;
             gap: 15px;
@@ -176,7 +178,6 @@
             display: grid;
             gap: 8px;
             margin-bottom: 15px;
-            /* Grid columns set dynamically by JavaScript */
         }
 
         .scale-pile {
@@ -191,6 +192,7 @@
             justify-content: center;
             transition: all 0.3s ease;
             position: relative;
+            cursor: pointer;
         }
 
         .scale-pile.highlight {
@@ -203,6 +205,12 @@
             border-color: #8b5cf6;
             background: rgba(139, 92, 246, 0.1);
             animation: shake 0.5s ease-in-out;
+        }
+
+        .scale-pile.can-drop {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
         }
 
         @keyframes shake {
@@ -244,27 +252,6 @@
             font-weight: bold;
             text-align: center;
             line-height: 1;
-        }
-
-        .cards-collected {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
-            justify-content: center;
-            margin-top: 8px;
-        }
-
-        .collected-card {
-            width: 24px;
-            height: 14px;
-            background: #4ade80;
-            border-radius: 3px;
-            font-size: 9px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #000;
-            font-weight: bold;
         }
 
         /* Cards Area */
@@ -347,21 +334,12 @@
             border-color: #34d399;
         }
 
-        /* Touch Support for Mobile */
         .card.face-up {
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
             border: 2px solid #e2e8f0;
             color: #1e293b;
-            cursor: grab;
+            cursor: pointer;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-            touch-action: none; /* Prevent default touch behaviors */
-        }
-
-        .card.face-up.dragging-touch {
-            transform: scale(1.1);
-            z-index: 1000;
-            opacity: 0.8;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
         }
 
         .card.face-up:hover {
@@ -369,8 +347,9 @@
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
         }
 
-        .card.face-up:active {
-            cursor: grabbing;
+        .card.face-up.selected {
+            border: 3px solid #10b981;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
             transform: scale(1.05);
         }
 
@@ -498,6 +477,22 @@
             z-index: 0;
         }
 
+        /* Footer */
+        .game-footer {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 12px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #10b981;
+        }
+
+        .footer-icon {
+            margin-right: 8px;
+        }
+
         /* Victory Screen */
         .victory-screen {
             display: none;
@@ -560,21 +555,7 @@
             transform: translateY(-2px);
         }
 
-        /* Footer */
-        .game-footer {
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            border-radius: 12px;
-            text-align: center;
-            font-size: 0.9rem;
-            color: #10b981;
-        }
-
-        .footer-icon {
-            margin-right: 8px;
-        }
+        /* Mobile Optimizations */
         @media (max-width: 768px) {
             .container {
                 padding: 10px;
@@ -585,13 +566,13 @@
             }
 
             .scale-piles {
-                grid-template-columns: repeat(4, 1fr);
-                gap: 6px;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 5px;
             }
 
             .scale-pile {
-                min-height: 60px;
-                padding: 6px;
+                min-height: 50px;
+                padding: 5px;
             }
 
             .scale-label {
@@ -602,8 +583,16 @@
                 font-size: 0.7rem;
             }
 
-            .pile-count {
-                font-size: 0.7rem;
+            .collected-card {
+                width: 28px;
+                height: 14px;
+                font-size: 7px;
+            }
+
+            .instructions {
+                font-size: 0.8rem;
+                padding: 6px 10px;
+                margin-bottom: 12px;
             }
 
             .cards-area {
@@ -660,7 +649,7 @@
 
             .play-area {
                 padding: 15px;
-                min-height: 150px;
+                min-height: 120px;
             }
         }
 
@@ -675,7 +664,7 @@
             }
 
             .scale-pile {
-                min-height: 50px;
+                min-height: 45px;
                 padding: 4px;
             }
 
@@ -688,14 +677,9 @@
                 font-size: 0.6rem;
             }
 
-            .collected-card {
-                width: 28px;
-                height: 14px;
-                font-size: 7px;
-            }
-
-            .pile-count {
-                font-size: 0.6rem;
+            .instructions {
+                font-size: 0.75rem;
+                padding: 5px 8px;
             }
 
             .card {
@@ -735,12 +719,6 @@
 
             .victory-buttons {
                 flex-direction: column;
-            }
-
-            .collected-card {
-                width: 20px;
-                height: 12px;
-                font-size: 8px;
             }
         }
     </style>
@@ -787,8 +765,8 @@
 
             <div class="game-board">
                 <div class="instructions">
-                    <span class="instructions-icon">🎯</span>
-                    Trascina le carte sulle note corrispondenti
+                    <span class="instructions-icon">📱</span>
+                    Tocca una carta per selezionarla, poi tocca il box della nota
                 </div>
                 <div class="scale-piles" id="scalePiles">
                     <!-- Scale piles will be generated here -->
@@ -841,23 +819,29 @@
             successCount: 0,
             errorCount: 0,
             completedPiles: 0,
-            noteCompleted: {}
+            noteCompleted: {},
+            notesNeeded: [],
+            selectedCard: null // For tap-to-select mode
         };
 
-        // Major scales with their notes (tutte con notazione bemole)
+        // Major scales with CORRECT theoretical alterations
+        // Sharp scales use ONLY sharps, Flat scales use ONLY flats
         const majorScales = {
+            // Sharp scales (diesis)
             'C': ['C', 'D', 'E', 'F', 'G', 'A', 'B'],
-            'G': ['G', 'A', 'B', 'C', 'D', 'E', 'Gb'],
-            'D': ['D', 'E', 'Gb', 'G', 'A', 'B', 'Db'],
-            'A': ['A', 'B', 'Db', 'D', 'E', 'Gb', 'Ab'],
-            'E': ['E', 'Gb', 'Ab', 'A', 'B', 'Db', 'Eb'],
-            'B': ['B', 'Db', 'Eb', 'E', 'Gb', 'Ab', 'Bb'],
-            'Gb': ['Gb', 'Ab', 'Bb', 'B', 'Db', 'Eb', 'F'],
+            'G': ['G', 'A', 'B', 'C', 'D', 'E', 'F#'],
+            'D': ['D', 'E', 'F#', 'G', 'A', 'B', 'C#'],
+            'A': ['A', 'B', 'C#', 'D', 'E', 'F#', 'G#'],
+            'E': ['E', 'F#', 'G#', 'A', 'B', 'C#', 'D#'],
+            'B': ['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#'],
+            
+            // Flat scales (bemolli)  
             'F': ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
             'Bb': ['Bb', 'C', 'D', 'Eb', 'F', 'G', 'A'],
             'Eb': ['Eb', 'F', 'G', 'Ab', 'Bb', 'C', 'D'],
             'Ab': ['Ab', 'Bb', 'C', 'Db', 'Eb', 'F', 'G'],
-            'Db': ['Db', 'Eb', 'F', 'Gb', 'Ab', 'Bb', 'C']
+            'Db': ['Db', 'Eb', 'F', 'Gb', 'Ab', 'Bb', 'C'],
+            'Gb': ['Gb', 'Ab', 'Bb', 'Cb', 'Db', 'Eb', 'F']
         };
 
         const scaleNames = ['C', 'G', 'D', 'A', 'E', 'B', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb'];
@@ -867,7 +851,6 @@
             const romans = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
             return romans[degree] || degree;
         }
-        const chromaticNotes = ['C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B'];
 
         // Start game with specified level
         function startGame(level) {
@@ -877,6 +860,7 @@
             gameState.completedPiles = 0;
             gameState.noteCompleted = {};
             gameState.notesNeeded = [];
+            gameState.selectedCard = null;
             
             // Determine number of scales based on level
             let numScales;
@@ -906,7 +890,7 @@
             drawCards();
         }
 
-        // Select random scales for the level - FIXED to avoid mixing sharp/flat scales
+        // Select random scales for the level - avoid mixing sharp/flat scales
         function selectRandomScales(count) {
             // Separate scales by type to avoid conflicts
             const sharpScales = ['C', 'G', 'D', 'A', 'E', 'B'];
@@ -1003,9 +987,15 @@
                     <div class="cards-collected" id="collected-${note}"></div>
                 `;
                 
-                // Add drag and drop events
+                // Desktop drag and drop events
                 pile.addEventListener('dragover', handleDragOver);
                 pile.addEventListener('drop', handleDrop);
+                
+                // Mobile tap events
+                pile.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    handlePileClick(pile, note);
+                });
                 
                 container.appendChild(pile);
             });
@@ -1060,7 +1050,6 @@
             cardEl.setAttribute('data-card-id', card.id);
             
             if (card.faceUp) {
-                cardEl.draggable = true;
                 cardEl.innerHTML = `
                     <div class="card-scale-text">Scala di</div>
                     <div class="card-scale">${card.scale}</div>
@@ -1068,14 +1057,16 @@
                     <div class="card-degree">${card.degree}°</div>
                 `;
                 
-                // Desktop drag & drop
+                // Tap to select (works on all devices)
+                cardEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectCard(card.id);
+                });
+                
+                // Keep drag&drop for desktop
+                cardEl.draggable = true;
                 cardEl.addEventListener('dragstart', handleDragStart);
                 cardEl.addEventListener('dragend', handleDragEnd);
-                
-                // Mobile touch events
-                cardEl.addEventListener('touchstart', handleTouchStart, { passive: false });
-                cardEl.addEventListener('touchmove', handleTouchMove, { passive: false });
-                cardEl.addEventListener('touchend', handleTouchEnd, { passive: false });
                 
             } else {
                 cardEl.innerHTML = `
@@ -1085,7 +1076,7 @@
                     </div>
                 `;
                 
-                // Prevent event propagation and multiple clicks
+                // Flip card
                 cardEl.addEventListener('click', (e) => {
                     e.stopPropagation();
                     e.preventDefault();
@@ -1094,6 +1085,57 @@
             }
             
             return cardEl;
+        }
+
+        // Tap-to-select system for mobile compatibility
+        function selectCard(cardId) {
+            // Deselect previous card
+            if (gameState.selectedCard) {
+                const prevCard = document.querySelector(`[data-card-id="${gameState.selectedCard}"]`);
+                if (prevCard) prevCard.classList.remove('selected');
+            }
+            
+            // Select new card
+            gameState.selectedCard = cardId;
+            const cardElement = document.querySelector(`[data-card-id="${cardId}"]`);
+            if (cardElement) {
+                cardElement.classList.add('selected');
+                
+                // Highlight valid drop zones
+                updateDropZones();
+            }
+        }
+
+        function updateDropZones() {
+            // Remove previous highlights
+            document.querySelectorAll('.scale-pile').forEach(pile => {
+                pile.classList.remove('can-drop');
+            });
+            
+            if (gameState.selectedCard) {
+                // Highlight all piles as potential drop zones
+                document.querySelectorAll('.scale-pile').forEach(pile => {
+                    pile.classList.add('can-drop');
+                });
+            }
+        }
+
+        function handlePileClick(pileElement, note) {
+            if (!gameState.selectedCard) return;
+            
+            const card = gameState.playCards.find(c => c.id === gameState.selectedCard);
+            if (!card) return;
+            
+            // Check if correct
+            if (card.correctNote === note) {
+                handleCorrectDrop(card, note);
+            } else {
+                handleIncorrectDrop(pileElement);
+            }
+            
+            // Deselect card and clear highlights
+            gameState.selectedCard = null;
+            updateDropZones();
         }
 
         // Flip card from face-down to face-up
@@ -1112,7 +1154,7 @@
             }, 150);
         }
 
-        // Drag and drop handlers
+        // Drag and drop handlers (for desktop)
         function handleDragStart(e) {
             e.target.classList.add('dragging');
             e.dataTransfer.setData('text/plain', e.target.getAttribute('data-card-id'));
@@ -1124,73 +1166,6 @@
 
         function handleDragOver(e) {
             e.preventDefault();
-        }
-
-        // Touch handlers for mobile devices
-        function handleTouchStart(e) {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const card = e.target.closest('.card');
-            
-            if (!card || !card.classList.contains('face-up')) return;
-            
-            touchDragState.isDragging = true;
-            touchDragState.draggedCard = card;
-            touchDragState.startX = touch.clientX;
-            touchDragState.startY = touch.clientY;
-            
-            card.classList.add('dragging-touch');
-        }
-
-        function handleTouchMove(e) {
-            if (!touchDragState.isDragging) return;
-            
-            e.preventDefault();
-            const touch = e.touches[0];
-            touchDragState.currentX = touch.clientX;
-            touchDragState.currentY = touch.clientY;
-            
-            // Visual feedback - move card with finger
-            const card = touchDragState.draggedCard;
-            const deltaX = touchDragState.currentX - touchDragState.startX;
-            const deltaY = touchDragState.currentY - touchDragState.startY;
-            
-            card.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1.1)`;
-        }
-
-        function handleTouchEnd(e) {
-            if (!touchDragState.isDragging) return;
-            
-            e.preventDefault();
-            const card = touchDragState.draggedCard;
-            
-            // Reset card position
-            card.style.transform = '';
-            card.classList.remove('dragging-touch');
-            
-            // Find what pile we're over
-            const touch = e.changedTouches[0];
-            const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-            const pile = elementBelow ? elementBelow.closest('.scale-pile') : null;
-            
-            if (pile) {
-                // Simulate drop event
-                const cardId = card.getAttribute('data-card-id');
-                const targetNote = pile.getAttribute('data-note');
-                
-                const cardData = gameState.playCards.find(c => c.id === cardId);
-                if (cardData) {
-                    if (cardData.correctNote === targetNote) {
-                        handleCorrectDrop(cardData, targetNote);
-                    } else {
-                        handleIncorrectDrop(pile);
-                    }
-                }
-            }
-            
-            // Reset touch state
-            touchDragState.isDragging = false;
-            touchDragState.draggedCard = null;
         }
 
         function handleDrop(e) {
@@ -1219,6 +1194,11 @@
             // Remove card from play (carta sparisce!)
             gameState.playCards = gameState.playCards.filter(c => c.id !== card.id);
             
+            // Clear selection
+            const cardElement = document.querySelector(`[data-card-id="${card.id}"]`);
+            if (cardElement) cardElement.classList.remove('selected');
+            gameState.selectedCard = null;
+            
             // Add to collected pile for tracking
             addToCollected(note, card);
             
@@ -1226,6 +1206,7 @@
             updatePlayArea();
             updateStats();
             updateDeckCount(); // Update footer message
+            updateDropZones(); // Clear highlights
             
             // Show success animation on pile
             const pile = document.getElementById(`pile-${note}`);
@@ -1234,6 +1215,18 @@
             
             // Check if game is won
             checkGameCompletion();
+        }
+
+        // Handle incorrect card drop
+        function handleIncorrectDrop(pile) {
+            gameState.errorCount++;
+            
+            // Show error animation (but keep card selected for retry)
+            pile.classList.add('reject');
+            setTimeout(() => pile.classList.remove('reject'), 500);
+            
+            updateStats();
+            updateDeckCount(); // Update footer message
         }
 
         // Add card to collected pile
@@ -1253,18 +1246,6 @@
             const count = container.children.length;
             const countEl = document.querySelector(`#pile-${note} .pile-count`);
             countEl.textContent = count;
-        }
-
-        // Handle incorrect card drop
-        function handleIncorrectDrop(pile) {
-            gameState.errorCount++;
-            
-            // Show error animation
-            pile.classList.add('reject');
-            setTimeout(() => pile.classList.remove('reject'), 500);
-            
-            updateStats();
-            updateDeckCount(); // Update footer message
         }
 
         // Check if game is complete
@@ -1304,11 +1285,11 @@
             if (gameState.cards.length === 0 && gameState.playCards.length === 0) {
                 footerTextEl.textContent = "🎉 Complimenti! Hai completato tutte le carte!";
             } else if (gameState.cards.length === 0) {
-                footerTextEl.textContent = "📝 Completa le carte rimanenti per vincere";
+                footerTextEl.textContent = "📝 Seleziona le carte e tocca i box per completare";
             } else if (gameState.playCards.length === 0) {
                 footerTextEl.textContent = "🎴 Pesca carte dal mazzo per continuare";
             } else {
-                footerTextEl.textContent = `🎯 Trascina le carte sui box - Carte rimaste: ${gameState.cards.length}`;
+                footerTextEl.textContent = `📱 Tocca carta → tocca box - Carte rimaste: ${gameState.cards.length}`;
             }
         }
 
