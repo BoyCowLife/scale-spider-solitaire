@@ -124,19 +124,19 @@
       <div class="level-selection">
         <button class="level-btn" data-level="easy">
           <div>🎵 Facile</div>
-          <div class="level-description">3 tonalità casuali (almeno una con #/♭)</div>
+          <div class="level-description">3 tonalità casuali (24 carte)</div>
         </button>
         <button class="level-btn" data-level="medium">
           <div>🎼 Medio</div>
-          <div class="level-description">6 tonalità casuali</div>
+          <div class="level-description">6 tonalità casuali (24 carte)</div>
         </button>
         <button class="level-btn" data-level="hard">
           <div>🎹 Difficile</div>
-          <div class="level-description">9 tonalità casuali</div>
+          <div class="level-description">9 tonalità casuali (24 carte)</div>
         </button>
         <button class="level-btn" data-level="expert">
           <div>🌟 Esperto</div>
-          <div class="level-description">Tutte 12 tonalità</div>
+          <div class="level-description">12 tonalità casuali (24 carte)</div>
         </button>
       </div>
     </div>
@@ -163,7 +163,7 @@
       </div>
 
       <div class="score-area">
-        <div class="cards-remaining" id="cardsRemaining">0</div>
+        <div class="cards-remaining" id="cardsRemaining">24</div>
         <div class="cards-label">Carte rimaste</div>
       </div>
 
@@ -178,9 +178,10 @@
       <div class="modal-content">
         <h2 class="modal-title">🎉 Complimenti!</h2>
         <p class="modal-text">
-          Hai completato il livello!<br />
-          Mosse: <span id="finalMoves">0</span><br />
-          Errori: <span id="finalErrors">0</span>
+          Hai completato tutte le 24 carte!<br /><br />
+          ✅ Corrette: <span id="finalSuccess">0</span><br />
+          ❌ Errori: <span id="finalErrors">0</span><br />
+          📊 Precisione: <span id="finalAccuracy">0</span>%
         </p>
         <button class="modal-button" onclick="showMenu()">Nuovo Gioco</button>
       </div>
@@ -302,7 +303,8 @@
         touchDragging: false,
         handSize: 5,
         noteCounts: {},
-        badgesByNote: {}
+        badgesByNote: {},
+        totalCards: 24  // Fisso a 24 carte per partita
       };
 
       BOX_NOTES.forEach(n => { 
@@ -326,7 +328,11 @@
         }
       });
 
-      gameState.deckQueue = shuffle(deck);
+      // Mescola e prendi solo 24 carte
+      const shuffled = shuffle(deck);
+      gameState.deckQueue = shuffled.slice(0, 24);
+      
+      // Riempi la mano iniziale
       for (let i=0;i<gameState.handSize;i++) {
         gameState.playCards[i]=drawFromQueue();
       }
@@ -337,6 +343,7 @@
       renderPlayArea();
       updateDeckCount();
       updateCardsRemaining();
+      updateFabVisibility();  // Nuova funzione
 
       document.getElementById('menu').classList.remove('active');
       document.getElementById('game').classList.add('active');
@@ -367,6 +374,10 @@
     }
     
     function dealNextHand(){
+      // Non permettere di rimescolare se non ci sono carte nel mazzo
+      const deckCount = gameState.deckQueue.filter(c=>!c.removed).length;
+      if(deckCount === 0) return;
+      
       for(let i=0;i<gameState.playCards.length;i++){ 
         const c=gameState.playCards[i]; 
         if(c && !c.removed){ 
@@ -384,7 +395,19 @@
       recalcRemaining(); 
       renderPlayArea(); 
       updateAnswerBoxesActivation();
+      updateFabVisibility();
       showStatus('↻','Nuova mano');
+    }
+    
+    function updateFabVisibility(){
+      const fab = document.getElementById('advanceFab');
+      const deckCount = gameState.deckQueue.filter(c=>!c.removed).length;
+      
+      if(deckCount === 0) {
+        fab.style.display = 'none';
+      } else {
+        fab.style.display = 'flex';
+      }
     }
     
     function updateDeckCount(){
@@ -741,7 +764,12 @@
           renderPlayArea(); 
           updateAnswerBoxesActivation(); 
           recalcRemaining();
-          if(gameState.cardsRemaining===0) showWin();
+          updateFabVisibility();
+          
+          // Check se tutte le 24 carte sono state completate
+          if(gameState.cardsRemaining === 0) {
+            setTimeout(showWin, 500);
+          }
         };
         
         if(el){ 
@@ -779,8 +807,12 @@
     }
 
     function showWin(){
-      document.getElementById('finalMoves').textContent=gameState.successCount+gameState.errorCount;
-      document.getElementById('finalErrors').textContent=gameState.errorCount;
+      const totalMoves = gameState.successCount + gameState.errorCount;
+      const accuracy = totalMoves > 0 ? Math.round((gameState.successCount / totalMoves) * 100) : 100;
+      
+      document.getElementById('finalSuccess').textContent = gameState.successCount;
+      document.getElementById('finalErrors').textContent = gameState.errorCount;
+      document.getElementById('finalAccuracy').textContent = accuracy;
       document.getElementById('winModal').classList.add('active');
     }
 
