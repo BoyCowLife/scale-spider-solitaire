@@ -45,7 +45,7 @@
     .note-box.answer-active{border-color:rgba(59,130,246,.55);background:rgba(59,130,246,.15);box-shadow:0 0 10px rgba(59,130,246,.25)}
     .note-box.can-drop{border-color:#10b981;background:rgba(16,185,129,.15);box-shadow:0 0 15px rgba(16,185,129,.3);animation:pulse 1s ease-in-out infinite}
     .note-box.drop-hover{transform:scale(1.05);border-color:#10b981;background:rgba(16,185,129,.25)}
-    .note-name{font-size:1.15rem;font-weight:800;color:#3b82f6}
+    .note-name{font-size:1rem;font-weight:800;color:#3b82f6;white-space:nowrap}
     .note-count{font-size:.8rem;color:#64748b;margin-top:4px}
     .note-badges{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-top:6px}
     .note-badge{background:#10b981;color:#0b1424;border-radius:6px;padding:2px 6px;font-size:.7rem;font-weight:800}
@@ -210,6 +210,7 @@
 
     // ======== Musical data =========
     const BOX_NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+    const BOX_DISPLAY_NAMES = ['C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab','A','A#/Bb','B'];
     const NOTE_TO_INDEX = {
       'C':0,'C#':1,'Db':1,'D':2,'D#':3,'Eb':3,'E':4,'F':5,'E#':5,
       'F#':6,'Gb':6,'G':7,'G#':8,'Ab':8,'A':9,'A#':10,'Bb':10,'B':11,'Cb':11
@@ -424,7 +425,7 @@
       const c=document.getElementById('noteBoxes'); 
       c.innerHTML='';
       
-      BOX_NOTES.forEach(note=>{
+      BOX_NOTES.forEach((note, idx)=>{
         const badges = (gameState.badgesByNote[note]||[])
           .map(b=>`<span class="note-badge">${b}</span>`)
           .join('');
@@ -433,7 +434,7 @@
         box.className='note-box'; 
         box.dataset.note=note;
         box.innerHTML=`
-          <div class="note-name">${note}</div>
+          <div class="note-name">${BOX_DISPLAY_NAMES[idx]}</div>
           <div class="note-count">${gameState.noteCounts[note]||0}</div>
           <div class="note-badges">${badges}</div>
         `;
